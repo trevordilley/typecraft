@@ -3,6 +3,7 @@ import {BASE_CONFIG} from "../App"
 import {Game} from "../Game"
 import {observer} from "mobx-react-lite"
 import {typingStore} from "./TypingStore"
+import {ActiveWord} from "./activeWord/ActiveWord"
 const preload = (scene: Phaser.Scene) => {
     console.log("preloaded")
 }
@@ -14,7 +15,6 @@ const update = (scene: Phaser.Scene) => {
 
 const onKeyGlobalPress = (character: string) => {
     const newWord = `${typingStore.currentWord}${character}`
-    console.log(newWord)
     if(typingStore.targetWord.startsWith(newWord)) {
         // Cool we got the correct character
         typingStore.points += 1
@@ -50,14 +50,14 @@ export const TypingScene = observer(() => {
     return (
             <Game config={TypingSceneConfig}>
                 <div>
-                    {typingStore.targetWord}
-                    <br/>
-                    {typingStore.currentWord}
-                    <br/>
-                    Points: {typingStore.points}
-                    <br/>
+                    <ActiveWord
+                        targetWord={typingStore.targetWord}
+                        currentWord={typingStore.currentWord}
+                        />
                 </div>
                 <div>
+                    Points: {typingStore.points}
+                    <br/>
                     Current Streak: {typingStore.currentStreak}
                     <br/>
                     Streak Points: {typingStore.streakPoints}
