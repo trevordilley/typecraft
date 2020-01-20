@@ -19,7 +19,7 @@ This template includes a minimal Phaser "game" that renders some circles, has
 a text element showing the position of the mouse, a React button which increments
 an integer (rendered from React) and an interactive bit of text rendered from Phaser.
 Clicking the React button and the Phaser text changes the value of the counter to
-demonstrate how the two systems can interact by simply sourcing from the same Store
+demonstrate how the two systems can interact by simply sourcing from the same TypingStore
 (where we keep state).
 
 ## Available Scripts
