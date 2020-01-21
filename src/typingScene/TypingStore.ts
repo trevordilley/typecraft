@@ -2,7 +2,7 @@ import {observable} from "mobx"
 
 class TypingStore {
     @observable
-    targetWord: string = "Hello, World"
+    targetWord: string = "Clojure"
 
     @observable
     currentWord: string = ""

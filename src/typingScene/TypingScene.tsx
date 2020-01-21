@@ -4,17 +4,35 @@ import {Game} from "../Game"
 import {observer} from "mobx-react-lite"
 import {typingStore} from "./TypingStore"
 import {ActiveWord} from "./activeWord/ActiveWord"
+import * as Phaser from 'phaser'
+
 const preload = (scene: Phaser.Scene) => {
-    console.log("preloaded")
+    scene.load.svg(ASSETS.Tower, '/assets/tower_round.svg')
+}
+
+// ENEMY TOWERS
+// PLAYER TOWERS
+
+enum ASSETS {
+    Tower = "tower"
 }
 const create = (scene: Phaser.Scene) => {
+    scene.add.image(100, 100, ASSETS.Tower)
+    scene.add.image(100, 300, ASSETS.Tower)
+    scene.add.image(100, 500, ASSETS.Tower)
+
+    scene.add.image(700, 100, ASSETS.Tower)
+    scene.add.image(700, 300, ASSETS.Tower)
+    scene.add.image(700, 500, ASSETS.Tower)
+
 }
 const update = (scene: Phaser.Scene) => {
 
 }
 
-const onKeyGlobalPress = (character: string) => {
+const onTyping = (character: string) => {
     const newWord = `${typingStore.currentWord}${character}`
+
     if(typingStore.targetWord.startsWith(newWord)) {
         // Cool we got the correct character
         typingStore.points += 1
@@ -26,8 +44,26 @@ const onKeyGlobalPress = (character: string) => {
     }
 
 }
-document.onkeypress = (ev: KeyboardEvent) =>
-    onKeyGlobalPress(ev.key)
+
+enum KEY_CODE {
+    Space="Space",
+    Tab="Tab"
+}
+
+document.onkeydown = (ev: KeyboardEvent) => {
+    ev.preventDefault()
+    if(ev.code === KEY_CODE.Space) {
+        // create a thing
+        console.log("Spacej")
+    }
+    else if (ev.code === KEY_CODE.Tab) {
+        // Choose a thing
+        console.log("Tabkj")
+    }
+    else {
+        onTyping(ev.key)
+    }
+}
 
 export const TypingScene = observer(() => {
 
