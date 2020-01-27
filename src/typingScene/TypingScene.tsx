@@ -17,6 +17,7 @@ import {SpriteComponent, SpriteComponentKind} from "./components/SpriteComponent
 import {Tower} from "./entities/towers/Tower"
 import {MovementComponent, MovementComponentKind} from "./components/MovementComponent"
 import {typed} from "./Typing"
+import {HealthComponent, HealthComponentKind} from "./components/HealthComponent"
 
 export enum TYPING_SCENE_ASSETS {
     Tower = "tower",
@@ -185,17 +186,26 @@ export const TypingScene = observer(() => {
                 // Movement System
                 const movementSystem = {
                         allOf:  [SpriteComponentKind, MovementComponentKind],
-                        execute: (entities: (SpriteComponent & MovementComponent & Entity)[]) => {
+                        execute: (entities: (Partial<SpriteComponent> & Partial<MovementComponent> & Entity)[]) => {
                             return entities.map(e => {
-                                e.sprite.x += 10
+                                e.sprite!.x += 10
                                 return e
                             })
                         }
                     }
 
+                // Still Alive System
+                const stillAliveSystem = {
+                    allOf:  [HealthComponentKind],
+                    execute: (entities: (Partial<HealthComponent> & Entity)[]) => {
+                        return entities.filter(e => e.hitPoints! >= 0 )
+                    }
+                }
+
                 entities = engine(entities,
                     [
-                        movementSystem
+                        movementSystem,
+                        stillAliveSystem
                     ]
                 )
             }
