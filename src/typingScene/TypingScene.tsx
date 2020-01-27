@@ -14,6 +14,7 @@ import {Gladiator} from "./entities/minions/Gladiator"
 import {Minotaur} from "./entities/minions/Minotaur"
 import {engine, Entity} from "../ECS/ECS"
 import {SpriteComponent, SpriteComponentKind} from "./components/SpriteComponent"
+import {Tower} from "./entities/towers/Tower"
 
 export enum TYPING_SCENE_ASSETS {
     Tower = "tower",
@@ -134,21 +135,23 @@ export const TypingScene = observer(() => {
                     }
                 )
 
-                sceneStore.scene!.add.image(100, 100, TYPING_SCENE_ASSETS.Tower)
-                sceneStore.scene!.add.image(100, 400, TYPING_SCENE_ASSETS.Tower)
+                Tower(100, 100)
+                Tower(100, 400)
+                Tower(1100, 100)
+                Tower(1100, 400)
 
-                sceneStore.scene!.add.image(1100, 100, TYPING_SCENE_ASSETS.Tower)
-                sceneStore.scene!.add.image(1100, 400, TYPING_SCENE_ASSETS.Tower)
-
+                const x = () => Math.floor(Math.random() * Math.floor(300))
+                const y = () => Math.floor(Math.random() * Math.floor(600))
                 entities =
                     [
-                        Adventurer(400, 150),
-                        Dwarf(450, 150),
-                        Builder(500, 150),
-                        Witch(550, 150),
-                        Gladiator(600, 150),
-                        Minotaur(650, 125)
+                        Adventurer(x(), y()),
+                        Dwarf(x(), y()),
+                        Builder(x(), y()),
+                        Witch(x(), y()),
+                        Gladiator(x(), y()),
+                        Minotaur(x(), y())
                     ]
+
 
             },
             update: function () {
@@ -168,9 +171,11 @@ export const TypingScene = observer(() => {
                 }
                 entities = engine(entities,
                     [
+
+                        // Movement System
                         {
                             allOf: new Set<string>([SpriteComponentKind]),
-                            execute: (entities:(SpriteComponent & Entity)[]) => {
+                            execute: (entities: (SpriteComponent & Entity)[]) => {
                                 return entities.map(e => {
                                     e.sprite.x += 10
                                     return e
