@@ -3,7 +3,7 @@ import * as Phaser from "phaser"
 import {TypingScene} from "./typingScene/TypingScene"
 
 export const THEME = {
-    stageWidth: 1400,
+    stageWidth: 1200,
     stageHeight: 600,
     // Really important we use a Mono space font so I can calculate the widths
     // based on the characters of the text.

@@ -37,7 +37,8 @@ export const ActiveWord: React.FC<{ targetWord: string, currentWord: string }> =
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
-                fontSize: THEME.typingFontSize
+                fontSize: THEME.typingFontSize,
+                color: "#f0d",
             }}
             >
                 <div style={{display: "flex", justifyContent: "center"}}>

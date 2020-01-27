@@ -5,88 +5,39 @@ import {observer} from "mobx-react-lite"
 import {typingStore} from "./TypingStore"
 import {ActiveWord} from "./activeWord/ActiveWord"
 import * as Phaser from "phaser"
+import {sceneStore} from "../SceneStore"
+import {Adventurer} from "./entities/minions/Adventurer"
+import {Dwarf} from "./entities/minions/Dwarf"
+import {Builder} from "./entities/minions/Builder"
+import {Witch} from "./entities/minions/Witch"
+import {Gladiator} from "./entities/minions/Gladiator"
+import {Minotaur} from "./entities/minions/Minotaur"
+import {engine, Entity} from "../ECS/ECS"
+import {SpriteComponent, SpriteComponentKind} from "./components/SpriteComponent"
 
-enum ASSETS {
+export enum TYPING_SCENE_ASSETS {
     Tower = "tower",
     Archer = "archer",
     Mage = "mage",
     Rogue = "rouge",
     Fighter = "fighter",
-    Necromancer = "necromancer"
+    Necromancer = "necromancer",
+    Adventurer = "adventurer",
+    Minotaur = "minotaur",
+    Witch = "witch",
+    Gladiator = "gladiator",
+    Dwarf = "dwarf",
+    Builder = "builder",
 }
 
-const preload = (scene: Phaser.Scene) => {
-    scene.load.image(ASSETS.Tower, "/assets/tower_round.svg")
-    scene.load.image(ASSETS.Mage, "/assets/robe.png" )
-    scene.load.image(ASSETS.Archer, "/assets/Archer.png")
-    scene.load.image(ASSETS.Rogue, "/assets/rogue.png")
-    scene.load.image(ASSETS.Fighter, "/assets/swordwoman.png")
-    scene.load.image(ASSETS.Necromancer, "/assets/necromancer.png")
+const outdoorMap = {
+    name: "outdoor",
+    imageSrc: "/assets/outdoor.png",
+    dataName: "outdoorMap",
+    dataSrc: "/assets/outdoor.json"
 }
 
-// ENEMY TOWERS
-// PLAYER TOWERS
-
-
-let player: Phaser.GameObjects.Sprite
 let cursors: Phaser.Types.Input.Keyboard.CursorKeys
-const create = (scene: Phaser.Scene) => {
-
-    player = scene.add.sprite(300, 400, ASSETS.Necromancer)
-    player.displayWidth = 96
-    player.scaleY = player.scaleX
-
-    scene.input.keyboard.enableGlobalCapture()
-    cursors = scene.input.keyboard.createCursorKeys()
-
-    scene.input.keyboard.on("keydown", (e: { key?: string }) => {
-            if (cursors.up?.isDown || cursors.down?.isDown || cursors.right?.isDown || cursors.left?.isDown || !e.key)
-                return
-            else
-                onTyping(e.key || "")
-        }
-    )
-    scene.add.image(100, 100, ASSETS.Tower)
-    scene.add.image(100, 300, ASSETS.Tower)
-    scene.add.image(100, 500, ASSETS.Tower)
-
-    scene.add.image(1300, 100, ASSETS.Tower)
-    scene.add.image(1300, 300, ASSETS.Tower)
-    scene.add.image(1300, 500, ASSETS.Tower)
-
-    const fighter = scene.add.sprite(400, 200, ASSETS.Fighter)
-    fighter.setScale(.05)
-    // fighter.displayWidth = 96
-    // fighter.scaleX = fighter.scaleY
-    const rogue =  scene.add.sprite(800, 200, ASSETS.Rogue)
-    rogue.setScale(.05)
-    // // rogue.displayWidth = 96
-    // // rogue.scaleX = rogue.scaleY
-    const mage = scene.add.sprite(400, 400, ASSETS.Mage)
-    mage.setScale(.05)
-    // // mage.displayWidth = 96
-    // // mage.scaleX = mage.scaleY
-    const archer = scene.add.sprite(800, 400, ASSETS.Archer)
-    archer.setScale(.05)
-    // archer.displayWidth = 96
-    // archer.scaleX = archer.scaleY
-
-}
-const update = (scene: Phaser.Scene) => {
-    if (cursors.up?.isDown) {
-        player.y -= 10
-    }
-    if (cursors.down?.isDown) {
-        player.y += 10
-    }
-    if (cursors.left?.isDown) {
-        player.x -= 10
-    }
-    if (cursors.right?.isDown) {
-        player.x += 10
-    }
-}
-
 
 const onTyping = (character: string) => {
     const newWord = `${typingStore.currentWord}${character}`
@@ -101,7 +52,7 @@ const onTyping = (character: string) => {
     }
 
 }
-
+let entities: Entity[] = []
 export const TypingScene = observer(() => {
 
     // on unmount
@@ -115,13 +66,119 @@ export const TypingScene = observer(() => {
         ...BASE_CONFIG,
         scene: {
             preload: function () {
-                preload(this as unknown as Phaser.Scene)
+                sceneStore.scene = this as unknown as Phaser.Scene
+                sceneStore.scene!.load.image(TYPING_SCENE_ASSETS.Tower, "/assets/tower_round.svg")
+                sceneStore.scene!.load.image(TYPING_SCENE_ASSETS.Mage, "/assets/robe.png")
+                sceneStore.scene!.load.image(TYPING_SCENE_ASSETS.Archer, "/assets/Archer.png")
+                sceneStore.scene!.load.image(TYPING_SCENE_ASSETS.Rogue, "/assets/rogue.png")
+                sceneStore.scene!.load.image(TYPING_SCENE_ASSETS.Fighter, "/assets/swordwoman.png")
+
+                // https://opengameart.org/content/pixel-art-minotaur-sprites
+                // Upscale them using this command:
+                // convert adventurer-sheet.png -filter point -resize 200% adventurer-sheet-big.png
+                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Adventurer, "/assets/adventurer-sheet-big.png", {
+                    frameWidth: 64,
+                    frameHeight: 64
+                })
+                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Builder, "/assets/builder-sheet-big.png", {
+                    frameWidth: 64,
+                    frameHeight: 64
+                })
+                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Dwarf, "/assets/dwarf-sheet-big.png", {
+                    frameWidth: 64,
+                    frameHeight: 64
+                })
+                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Gladiator, "/assets/gladiator-sheet-big.png", {
+                    frameWidth: 64,
+                    frameHeight: 64
+                })
+                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Minotaur, "/assets/minotaur-sheet-big.png", {
+                    frameWidth: 128,
+                    frameHeight: 128
+                })
+                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Witch, "/assets/witch-sheet-big.png", {
+                    frameWidth: 64,
+                    frameHeight: 64
+                })
+
+                sceneStore.scene!.load.image(outdoorMap.name, outdoorMap.imageSrc)
+                sceneStore.scene!.load.tilemapTiledJSON(outdoorMap.dataName, outdoorMap.dataSrc)
             },
             create: function () {
-                create(this as unknown as Phaser.Scene)
+                const map = sceneStore.scene!.make.tilemap({key: outdoorMap.dataName})
+                const tiles = map.addTilesetImage("outdoor-tileset", outdoorMap.name)
+                map.createStaticLayer(0, tiles, 0, 0)
+                map.createStaticLayer(1, tiles, 0, 0)
+
+                sceneStore.scene!.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels)
+
+                sceneStore.scene!.anims.create({
+                        key: "idle",
+                        frames: sceneStore.scene!.anims.generateFrameNumbers(TYPING_SCENE_ASSETS.Adventurer, {
+                            start: 0,
+                            end: 12
+                        }),
+                        frameRate: 20
+                    }
+                )
+
+
+                sceneStore.scene!.input.keyboard.enableGlobalCapture()
+                cursors = sceneStore.scene!.input.keyboard.createCursorKeys()
+
+                sceneStore.scene!.input.keyboard.on("keydown", (e: { key?: string }) => {
+                        if (cursors.up?.isDown || cursors.down?.isDown || cursors.right?.isDown || cursors.left?.isDown || !e.key)
+                            return
+                        else
+                            onTyping(e.key || "")
+                    }
+                )
+
+                sceneStore.scene!.add.image(100, 100, TYPING_SCENE_ASSETS.Tower)
+                sceneStore.scene!.add.image(100, 400, TYPING_SCENE_ASSETS.Tower)
+
+                sceneStore.scene!.add.image(1100, 100, TYPING_SCENE_ASSETS.Tower)
+                sceneStore.scene!.add.image(1100, 400, TYPING_SCENE_ASSETS.Tower)
+
+                entities =
+                    [
+                        Adventurer(400, 150),
+                        Dwarf(450, 150),
+                        Builder(500, 150),
+                        Witch(550, 150),
+                        Gladiator(600, 150),
+                        Minotaur(650, 125)
+                    ]
+
             },
             update: function () {
-                update(this as unknown as Phaser.Scene)
+                // Use scrollX/Y to move camera around
+                // the map.
+                if (cursors.up?.isDown) {
+                    sceneStore.scene!.cameras.main.scrollY -= 10
+                }
+                if (cursors.down?.isDown) {
+                    sceneStore.scene!.cameras.main.scrollY += 10
+                }
+                if (cursors.left?.isDown) {
+                    sceneStore.scene!.cameras.main.scrollX -= 10
+                }
+                if (cursors.right?.isDown) {
+                    sceneStore.scene!.cameras.main.scrollX += 10
+                }
+                entities = engine(entities,
+                    [
+                        {
+                            allOf: new Set<string>([SpriteComponentKind]),
+                            execute: entities => {
+                                return entities.map((e: (Entity )) => {
+                                    (e.components.get(SpriteComponentKind) as SpriteComponent)!.sprite.x += 10
+                                    return e
+                                })
+                            }
+                        }
+                    ]
+                )
             }
         }
     }
