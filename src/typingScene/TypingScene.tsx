@@ -170,9 +170,9 @@ export const TypingScene = observer(() => {
                     [
                         {
                             allOf: new Set<string>([SpriteComponentKind]),
-                            execute: entities => {
-                                return entities.map((e: (Entity )) => {
-                                    (e.components.get(SpriteComponentKind) as SpriteComponent)!.sprite.x += 10
+                            execute: (entities:(SpriteComponent & Entity)[]) => {
+                                return entities.map(e => {
+                                    e.sprite.x += 10
                                     return e
                                 })
                             }

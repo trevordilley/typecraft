@@ -1,9 +1,9 @@
 import * as _ from 'lodash'
 
 export interface Entity {
-    components: Map<string, EntityComponent>
+    components: Set<string>
 }
-export const entity = (): Entity => ({components: new Map<string, EntityComponent>()})
+export const entity = (): Entity => ({components: new Set<string>()})
 
 
 export interface EntityComponent {
@@ -14,7 +14,7 @@ export interface System {
     allOf?: Set<string>, // Execute on entities that have all these componentsStrings
     oneOf?: Set<string>, // And on entities that have one of these componentsStrings
     noneOf?: Set<string>, // And on entities that have none of these componentsStrings
-    execute: (entities: Entity[]) => Entity[]
+    execute:  (entities: any[]) => Entity[]
 }
 
 const allOf = (entity: Entity, expected: string[]): boolean =>
@@ -46,3 +46,37 @@ export const engine = (
     return entities
 }
 
+interface E2 {
+    components: Set<string>
+}
+
+
+// const e = (): E2 => ({components: new Set<string>()})
+// interface Health2 {
+//     hitPoints: number
+// }
+// const h = (e: E2, hitPoints: number): E2 & Health2 => ({
+// ...e, components: e.components.add("health"), hitPoints
+// })
+//
+// interface Sprite2 {
+//     sprite: string
+// }
+// const s = (e: E2, sprite: string): {components: Set<string>} & Sprite2 =>
+//     ({...e, components: e.components.add("sprite"), sprite})
+//
+// const m = s(h(e(),10),"sprite")
+// console.log(m)
+//
+// interface Sys<T> {
+//     allOf?: Set<string>, // Execute on entities that have all these componentsStrings
+//     oneOf?: Set<string>, // And on entities that have one of these componentsStrings
+//     noneOf?: Set<string>, // And on entities that have none of these componentsStrings
+//     process: (e: T[]) => E2[]
+// }
+//
+// const e = (entities: E2[], sys: Sys[]) => {
+//     sys.forEach((s) => {
+//
+//     })
+// }
