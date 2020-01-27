@@ -15,6 +15,8 @@ import {Minotaur} from "./entities/minions/Minotaur"
 import {engine, Entity} from "../ECS/ECS"
 import {SpriteComponent, SpriteComponentKind} from "./components/SpriteComponent"
 import {Tower} from "./entities/towers/Tower"
+import {MovementComponent, MovementComponentKind} from "./components/MovementComponent"
+import {typed} from "./Typing"
 
 export enum TYPING_SCENE_ASSETS {
     Tower = "tower",
@@ -41,18 +43,27 @@ const outdoorMap = {
 let cursors: Phaser.Types.Input.Keyboard.CursorKeys
 
 const onTyping = (character: string) => {
-    const newWord = `${typingStore.currentWord}${character}`
 
-    if (typingStore.targetWord.startsWith(newWord)) {
-        // Cool we got the correct character
-        typingStore.points += 1
-        typingStore.currentStreak += 1
-        typingStore.currentWord = newWord
-    } else {
-        typingStore.currentStreak = 0
+    const {nextWord, points, currentStreak, currentWord} = typed({
+        currentStreak: typingStore.currentStreak,
+        currentWord: typingStore.currentWord,
+        character,
+        nextWord: false,
+        targetWord: typingStore.targetWord,
+        points: typingStore.points
+    })
+    typingStore.currentStreak = currentStreak
+    typingStore.points = points
+    if(nextWord) {
+        typingStore.nextWord()
+        typingStore.currentWord = ""
     }
-
+    else {
+        typingStore.currentWord = currentWord
+    }
 }
+
+// TODO: Use a MobX Store?
 let entities: Entity[] = []
 export const TypingScene = observer(() => {
 
@@ -169,19 +180,22 @@ export const TypingScene = observer(() => {
                 if (cursors.right?.isDown) {
                     sceneStore.scene!.cameras.main.scrollX += 10
                 }
+
+
+                // Movement System
+                const movementSystem = {
+                        allOf:  [SpriteComponentKind, MovementComponentKind],
+                        execute: (entities: (SpriteComponent & MovementComponent & Entity)[]) => {
+                            return entities.map(e => {
+                                e.sprite.x += 10
+                                return e
+                            })
+                        }
+                    }
+
                 entities = engine(entities,
                     [
-
-                        // Movement System
-                        {
-                            allOf: new Set<string>([SpriteComponentKind]),
-                            execute: (entities: (SpriteComponent & Entity)[]) => {
-                                return entities.map(e => {
-                                    e.sprite.x += 10
-                                    return e
-                                })
-                            }
-                        }
+                        movementSystem
                     ]
                 )
             }

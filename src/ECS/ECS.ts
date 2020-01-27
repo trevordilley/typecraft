@@ -11,9 +11,9 @@ export interface EntityComponent {
 }
 
 export interface System {
-    allOf?: Set<string>, // Execute on entities that have all these componentsStrings
-    oneOf?: Set<string>, // And on entities that have one of these componentsStrings
-    noneOf?: Set<string>, // And on entities that have none of these componentsStrings
+    allOf?: string[], // Execute on entities that have all these componentsStrings
+    oneOf?: string[], // And on entities that have one of these componentsStrings
+    noneOf?: string[], // And on entities that have none of these componentsStrings
     execute:  (entities: any[]) => Entity[]
 }
 
@@ -37,8 +37,8 @@ export const engine = (
     systems.forEach(s => {
         const [toProcess, others] = _.partition(entities, e => {
             const all = (s.allOf) ? allOf(e, Array.from(s.allOf)) : true
-            const one = (s.oneOf) ? oneOf(e, s.oneOf ) : true
-            const noneOf = (s.noneOf) ? !oneOf(e, s.noneOf) : true
+            const one = (s.oneOf) ? oneOf(e, new Set<string>(s.oneOf) ) : true
+            const noneOf = (s.noneOf) ? !oneOf(e, new Set<string>(s.noneOf)) : true
             return all && one && noneOf
         })
         entities = s.execute(toProcess).concat(others)
