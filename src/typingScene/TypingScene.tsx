@@ -18,7 +18,8 @@ import {Tower} from "./entities/towers/Tower"
 import {MovementComponent, MovementComponentKind} from "./components/MovementComponent"
 import {typed} from "./Typing"
 import {HealthComponent, HealthComponentKind} from "./components/HealthComponent"
-import {entityStore} from "./EntityStore"
+import {add, entityStore} from "./EntityStore"
+import {playerStore, SpawnDirection, SpawnPoint} from "./PlayerStore"
 
 export enum TYPING_SCENE_ASSETS {
     Tower = "tower",
@@ -59,6 +60,12 @@ const onTyping = (character: string) => {
     if (nextWord) {
         typingStore.nextWord()
         typingStore.currentWord = ""
+        add(Adventurer(70, 100))
+        add(Minotaur(100, 100))
+        add(Witch(100, 120))
+        add(Builder(50, 80))
+        add(Gladiator(90, 90))
+        add(Dwarf(90, 70))
     } else {
         typingStore.currentWord = currentWord
     }
@@ -147,24 +154,32 @@ export const TypingScene = observer(() => {
                     }
                 )
 
-                Tower(100, 100)
-                Tower(100, 400)
-                Tower(1100, 100)
-                Tower(1100, 400)
+                const tlTower = add(Tower(100, 100, SpawnDirection.RIGHT))
+                const blTower = add(Tower(100, 400, SpawnDirection.RIGHT))
+                playerStore.player1 = {
+                    topSpawn: tlTower as unknown as SpawnPoint,
+                    bottomSpawn: blTower as unknown as SpawnPoint,
+                    currentSpawn: tlTower as unknown as SpawnPoint
+                }
+
+                const trTower = add(Tower(1100, 100, SpawnDirection.LEFT))
+                const brTower = add(Tower(1100, 400, SpawnDirection.LEFT))
+                playerStore.player2 = {
+                    topSpawn: trTower as unknown as SpawnPoint,
+                    bottomSpawn: brTower as unknown as SpawnPoint,
+                    currentSpawn: trTower as unknown as SpawnPoint
+                }
+
 
                 const x = () => Math.floor(Math.random() * Math.floor(300))
                 const y = () => Math.floor(Math.random() * Math.floor(600))
-                entityStore.entities =
-                    [
-                        Adventurer(x(), y()),
-                        Dwarf(x(), y()),
-                        Builder(x(), y()),
-                        Witch(x(), y()),
-                        Gladiator(x(), y()),
-                        Minotaur(x(), y())
-                    ]
 
-
+                add(Adventurer(x(), y()))
+                add(Dwarf(x(), y()))
+                add(Builder(x(), y()))
+                add(Witch(x(), y()))
+                add(Gladiator(x(), y()))
+                add(Minotaur(x(), y()))
             },
             update: function () {
                 // Use scrollX/Y to move camera around
@@ -188,7 +203,7 @@ export const TypingScene = observer(() => {
                     allOf: [SpriteComponentKind, MovementComponentKind],
                     execute: (entities: (Partial<SpriteComponent> & Partial<MovementComponent> & Entity)[]) => {
                         return entities.map(e => {
-                            e.sprite!.x += 10
+                            e.sprite!.x += e.speed!
                             return e
                         })
                     }
@@ -221,12 +236,24 @@ export const TypingScene = observer(() => {
                     currentWord={typingStore.currentWord}
                 />
             </div>
+            <div style={{display: "flex", flexDirection: "row"}}>
             <div>
                 Points: {typingStore.points}
                 <br/>
                 Current Streak: {typingStore.currentStreak}
                 <br/>
                 Streak Points: {typingStore.streakPoints}
+            </div>
+            <div>
+                <ul>
+                    <li>Typing creates batch of minions</li>
+                    <li>Tab changes lane</li>
+                    <li>Streaks allow purchase of upgrades to minion squad</li>
+                    <li>Portal is open allows typing. Then it closes and you spend
+                        your streak points.
+                    </li>
+                </ul>
+            </div>
             </div>
         </Game>
     )

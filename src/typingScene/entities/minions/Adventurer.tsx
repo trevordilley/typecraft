@@ -1,10 +1,10 @@
 import {Entity} from "../../../ECS/ECS"
-import {Minion} from "./Minion"
+import {DEFAULT_SPEED, Minion} from "./Minion"
 import {sceneStore} from "../../../SceneStore"
 import {TYPING_SCENE_ASSETS} from "../../TypingScene"
 
 const defaultHitPoints = 10
-const defaultSpeed = 3
+const defaultSpeed = DEFAULT_SPEED
 export const Adventurer = (
     x:number,
     y: number,

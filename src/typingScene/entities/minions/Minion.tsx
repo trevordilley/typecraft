@@ -3,7 +3,7 @@ import {entity, Entity} from "../../../ECS/ECS"
 import { healthy} from "../../components/HealthComponent"
 import { sprited} from "../../components/SpriteComponent"
 import { moves} from "../../components/MovementComponent"
-
+export const DEFAULT_SPEED = 6
 export const Minion = (
     hitPoints: number,
     speed: number,
