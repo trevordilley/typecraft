@@ -18,6 +18,7 @@ import {Tower} from "./entities/towers/Tower"
 import {MovementComponent, MovementComponentKind} from "./components/MovementComponent"
 import {typed} from "./Typing"
 import {HealthComponent, HealthComponentKind} from "./components/HealthComponent"
+import {entityStore} from "./EntityStore"
 
 export enum TYPING_SCENE_ASSETS {
     Tower = "tower",
@@ -55,11 +56,10 @@ const onTyping = (character: string) => {
     })
     typingStore.currentStreak = currentStreak
     typingStore.points = points
-    if(nextWord) {
+    if (nextWord) {
         typingStore.nextWord()
         typingStore.currentWord = ""
-    }
-    else {
+    } else {
         typingStore.currentWord = currentWord
     }
 }
@@ -140,7 +140,7 @@ export const TypingScene = observer(() => {
                 cursors = sceneStore.scene!.input.keyboard.createCursorKeys()
 
                 sceneStore.scene!.input.keyboard.on("keydown", (e: { key?: string }) => {
-                        if (cursors.up?.isDown || cursors.down?.isDown || cursors.right?.isDown || cursors.left?.isDown || !e.key)
+                        if (cursors.up?.isDown || cursors.down?.isDown || cursors.right?.isDown || cursors.left?.isDown || !e.key || e.key === "Shift")
                             return
                         else
                             onTyping(e.key || "")
@@ -154,7 +154,7 @@ export const TypingScene = observer(() => {
 
                 const x = () => Math.floor(Math.random() * Math.floor(300))
                 const y = () => Math.floor(Math.random() * Math.floor(600))
-                entities =
+                entityStore.entities =
                     [
                         Adventurer(x(), y()),
                         Dwarf(x(), y()),
@@ -185,24 +185,24 @@ export const TypingScene = observer(() => {
 
                 // Movement System
                 const movementSystem = {
-                        allOf:  [SpriteComponentKind, MovementComponentKind],
-                        execute: (entities: (Partial<SpriteComponent> & Partial<MovementComponent> & Entity)[]) => {
-                            return entities.map(e => {
-                                e.sprite!.x += 10
-                                return e
-                            })
-                        }
-                    }
-
-                // Still Alive System
-                const stillAliveSystem = {
-                    allOf:  [HealthComponentKind],
-                    execute: (entities: (Partial<HealthComponent> & Entity)[]) => {
-                        return entities.filter(e => e.hitPoints! >= 0 )
+                    allOf: [SpriteComponentKind, MovementComponentKind],
+                    execute: (entities: (Partial<SpriteComponent> & Partial<MovementComponent> & Entity)[]) => {
+                        return entities.map(e => {
+                            e.sprite!.x += 10
+                            return e
+                        })
                     }
                 }
 
-                entities = engine(entities,
+                // Still Alive System
+                const stillAliveSystem = {
+                    allOf: [HealthComponentKind],
+                    execute: (entities: (Partial<HealthComponent> & Entity)[]) => {
+                        return entities.filter(e => e.hitPoints! >= 0)
+                    }
+                }
+                const entities = entityStore.entities
+                entityStore.entities = engine(entities,
                     [
                         movementSystem,
                         stillAliveSystem
