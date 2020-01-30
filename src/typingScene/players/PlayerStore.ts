@@ -1,6 +1,4 @@
-import {computed, observable} from "mobx"
-import {Entity} from "../ECS/ECS"
-import {Adventurer} from "./entities/minions/Adventurer"
+import {observable} from "mobx"
 
 export enum SpawnDirection {
     RIGHT,
@@ -10,14 +8,16 @@ export enum SpawnDirection {
 export interface SpawnPoint {
     x: number,
     y: number,
-    direction: SpawnDirection
+    spawnDirection: SpawnDirection
 }
 
-interface Player {
+
+export interface Player {
     topSpawn: SpawnPoint,
     bottomSpawn: SpawnPoint,
-    currentSpawn: SpawnPoint
+    currentSpawn: SpawnPoint,
 }
+
 
 class PlayerStore {
     @observable

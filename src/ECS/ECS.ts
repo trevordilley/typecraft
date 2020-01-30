@@ -14,7 +14,7 @@ export interface System {
     allOf?: string[], // Execute on entities that have all these componentsStrings
     oneOf?: string[], // And on entities that have one of these componentsStrings
     noneOf?: string[], // And on entities that have none of these componentsStrings
-    execute:  (entities:  Entity[]) => Entity[]
+    execute:  (entities:  Entity[], deltaTime: number) => Entity[]
 }
 
 const allOf = (entity: Entity, expected: string[]): boolean =>
@@ -31,7 +31,8 @@ const oneOf = (e: Entity, expected: Set<String>) =>
 
 export const engine = (
     allEntities: Entity[],
-    systems: System[]
+    systems: System[],
+    deltaTime: number
 ): Entity[] => {
     let entities: Entity[] = allEntities
     systems.forEach(s => {
@@ -41,7 +42,7 @@ export const engine = (
             const noneOf = (s.noneOf) ? !oneOf(e, new Set<string>(s.noneOf)) : true
             return all && one && noneOf
         })
-        entities = s.execute(toProcess).concat(others)
+        entities = s.execute(toProcess, deltaTime).concat(others)
     })
     return entities
 }

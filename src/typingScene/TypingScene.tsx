@@ -1,8 +1,8 @@
-import React, {useEffect} from "react"
+import React, {useEffect, useState} from "react"
 import {BASE_CONFIG} from "../App"
 import {Game} from "../libraries/Game/Game"
 import {observer} from "mobx-react-lite"
-import {typingStore} from "./TypingStore"
+import {typingStore} from "./typing/TypingStore"
 import {ActiveWord} from "./activeWord/ActiveWord"
 import * as Phaser from "phaser"
 import {sceneStore} from "../SceneStore"
@@ -16,10 +16,16 @@ import {engine, Entity} from "../ECS/ECS"
 import {SpriteComponent, SpriteComponentKind} from "./components/SpriteComponent"
 import {Tower} from "./entities/towers/Tower"
 import {MovementComponent, MovementComponentKind} from "./components/MovementComponent"
-import {typed} from "./Typing"
+import {typed} from "./typing/Typing"
 import {HealthComponent, HealthComponentKind} from "./components/HealthComponent"
 import {add, entityStore} from "./EntityStore"
-import {playerStore, SpawnDirection, SpawnPoint} from "./PlayerStore"
+import {Player, playerStore, SpawnDirection, SpawnPoint} from "./players/PlayerStore"
+import {randomInt} from "../Util"
+import {spawn} from "./components/SpawnedComponent"
+import {PositionComponent, PositionComponentKind} from "./components/PositionComponent"
+import {debugStore} from "./DebugStore"
+import {timeStore} from "./TimeStore"
+
 
 export enum TYPING_SCENE_ASSETS {
     Tower = "tower",
@@ -71,8 +77,6 @@ const onTyping = (character: string) => {
     }
 }
 
-// TODO: Use a MobX Store?
-let entities: Entity[] = []
 export const TypingScene = observer(() => {
 
     // on unmount
@@ -82,9 +86,64 @@ export const TypingScene = observer(() => {
         }
     }, [])
 
+    /***********************
+     Systems
+     ***********************/
+
+        // Position System (make sprites respect the x,y on the entity itself)
+    const positionSystem = {
+            allOf: [SpriteComponentKind, PositionComponentKind],
+            execute: (entities: (Partial<SpriteComponent> & Partial<PositionComponent> & Entity)[]) => {
+                return entities.map(e => {
+                    e.sprite!.x = e.x!
+                    e.sprite!.y = e.y!
+                    return e
+                })
+            }
+        }
+
+    // Movement System
+    const movementSystem = {
+        allOf: [PositionComponentKind, MovementComponentKind],
+        execute: (entities: (Partial<PositionComponent> & Partial<MovementComponent> & Entity)[], dt: number) => {
+            return entities.map(e => {
+                if (!e.destination) {
+                    return e
+                }
+
+                const p = new Phaser.Math.Vector2(e.x!, e.y!)
+                const d = new Phaser.Math.Vector2(e.destination!.x, e.destination!.y)
+
+                // They have reached their destination
+                if (d.distance(p) < 5) {
+                    return {...e, destination: undefined}
+                }
+
+                const dir = d.subtract(p).normalize().angle()
+                const x = dt * Math.cos(dir) * e.speed! + e.x!
+                const y = dt * Math.sin(dir) * e.speed! + e.y!
+                return {...e, x, y}
+            })
+        }
+    }
+
+    // Still Alive System
+    const stillAliveSystem = {
+        allOf: [HealthComponentKind],
+        execute: (entities: (Partial<HealthComponent> & Entity)[]) => {
+            return entities.filter(e => e.hitPoints! >= 0)
+        }
+    }
+
+
     const TypingSceneConfig = {
         ...BASE_CONFIG,
         scene: {
+
+
+            /***********************
+             PRELOAD
+             ***********************/
             preload: function () {
                 sceneStore.scene = this as unknown as Phaser.Scene
                 sceneStore.scene!.load.image(TYPING_SCENE_ASSETS.Tower, "/assets/tower_round.svg")
@@ -124,6 +183,11 @@ export const TypingScene = observer(() => {
                 sceneStore.scene!.load.image(outdoorMap.name, outdoorMap.imageSrc)
                 sceneStore.scene!.load.tilemapTiledJSON(outdoorMap.dataName, outdoorMap.dataSrc)
             },
+
+
+            /***********************
+             CREATE
+             ***********************/
             create: function () {
                 const map = sceneStore.scene!.make.tilemap({key: outdoorMap.dataName})
                 const tiles = map.addTilesetImage("outdoor-tileset", outdoorMap.name)
@@ -142,15 +206,23 @@ export const TypingScene = observer(() => {
                     }
                 )
 
-
                 sceneStore.scene!.input.keyboard.enableGlobalCapture()
                 cursors = sceneStore.scene!.input.keyboard.createCursorKeys()
 
                 sceneStore.scene!.input.keyboard.on("keydown", (e: { key?: string }) => {
+                        debugStore.debugLastKeyPressed = e.key
+                        if (e.key === "`") {
+                            debugStore.debugUiEnabled = !debugStore.debugUiEnabled
+                            return
+                        }
+                        if(e.key === "Escape") {
+                            timeStore.togglePause()
+                        }
                         if (cursors.up?.isDown || cursors.down?.isDown || cursors.right?.isDown || cursors.left?.isDown || !e.key || e.key === "Shift")
                             return
-                        else
-                            onTyping(e.key || "")
+                        else if (e.key) {
+                            onTyping(e.key)
+                        }
                     }
                 )
 
@@ -170,18 +242,34 @@ export const TypingScene = observer(() => {
                     currentSpawn: trTower as unknown as SpawnPoint
                 }
 
+                // Stub AI loop
+                const randomBehaviour = (player: Player, opponent: Player) => {
+                    const spawnSquad = (p: SpawnPoint, p2: SpawnPoint) => {
+                        const e: Entity & Partial<MovementComponent> & Partial<PositionComponent> = spawn(Minotaur(0, 0), p)
+                        e.destination! = {x: p2.x, y: e.y!}
+                        add(e)
+                    }
+                    const rand = randomInt(5)
+                    if (rand > 2) {
+                        spawnSquad(player.topSpawn, opponent.topSpawn)
+                    } else {
+                        spawnSquad(player.bottomSpawn, opponent.bottomSpawn)
+                    }
 
-                const x = () => Math.floor(Math.random() * Math.floor(300))
-                const y = () => Math.floor(Math.random() * Math.floor(600))
-
-                add(Adventurer(x(), y()))
-                add(Dwarf(x(), y()))
-                add(Builder(x(), y()))
-                add(Witch(x(), y()))
-                add(Gladiator(x(), y()))
-                add(Minotaur(x(), y()))
+                }
+                setInterval(() => {
+                    if (randomInt(10) > 5) {
+                        randomBehaviour(playerStore.player1!, playerStore.player2!)
+                    } else {
+                        randomBehaviour(playerStore.player2!, playerStore.player1!)
+                    }
+                }, 5000)
             },
-            update: function () {
+
+            /***********************
+             UPDATE
+             ***********************/
+            update: function (timeStep: number, dt: number) {
                 // Use scrollX/Y to move camera around
                 // the map.
                 if (cursors.up?.isDown) {
@@ -197,31 +285,16 @@ export const TypingScene = observer(() => {
                     sceneStore.scene!.cameras.main.scrollX += 10
                 }
 
-
-                // Movement System
-                const movementSystem = {
-                    allOf: [SpriteComponentKind, MovementComponentKind],
-                    execute: (entities: (Partial<SpriteComponent> & Partial<MovementComponent> & Entity)[]) => {
-                        return entities.map(e => {
-                            e.sprite!.x += e.speed!
-                            return e
-                        })
-                    }
-                }
-
-                // Still Alive System
-                const stillAliveSystem = {
-                    allOf: [HealthComponentKind],
-                    execute: (entities: (Partial<HealthComponent> & Entity)[]) => {
-                        return entities.filter(e => e.hitPoints! >= 0)
-                    }
-                }
+                const deltaTime = dt * timeStore.dilation
                 const entities = entityStore.entities
-                entityStore.entities = engine(entities,
+                entityStore.entities = engine(
+                    entities,
                     [
+                        positionSystem,
                         movementSystem,
                         stillAliveSystem
-                    ]
+                    ],
+                    deltaTime
                 )
             }
         }
@@ -236,25 +309,64 @@ export const TypingScene = observer(() => {
                     currentWord={typingStore.currentWord}
                 />
             </div>
-            <div style={{display: "flex", flexDirection: "row"}}>
-            <div>
-                Points: {typingStore.points}
-                <br/>
-                Current Streak: {typingStore.currentStreak}
-                <br/>
-                Streak Points: {typingStore.streakPoints}
-            </div>
-            <div>
+            <div style={{display: "flex", flexDirection: "row", justifyContent: "space-around"}}>
+                <div>
+                    Points: {typingStore.points}
+                    <br/>
+                    Current Streak: {typingStore.currentStreak}
+                    <br/>
+                    Streak Points: {typingStore.streakPoints}
+                </div>
                 <ul>
-                    <li>Typing creates batch of minions</li>
-                    <li>Tab changes lane</li>
-                    <li>Streaks allow purchase of upgrades to minion squad</li>
-                    <li>Portal is open allows typing. Then it closes and you spend
-                        your streak points.
-                    </li>
+                    <li>Entity Count: {entityStore.entities.length}</li>
+                    <li>Last Key: {debugStore.debugLastKeyPressed}</li>
+                    <li>Debug UI Enabled: {debugStore.debugUiEnabled ? "True" : "False"}</li>
+                    <li>Paused: {timeStore.paused}</li>
+                    <li>Time Dilation: {timeStore.dilation}</li>
                 </ul>
+                <div>
+                    <ul>
+                        <li>Typing creates batch of minions</li>
+                        <li>Tab changes lane</li>
+                        <li>Streaks allow purchase of upgrades to minion squad</li>
+                        <li>Typing is actually in a time window</li>
+                    </ul>
+                </div>
             </div>
-            </div>
+            {
+                debugStore.debugUiEnabled &&
+                entityStore.entities.map(entity => (<DebugEntity entity={entity}/>))
+            }
         </Game>
     )
 })
+
+const DebugEntity: React.FC<{
+    entity: Entity &
+        Partial<PositionComponent> &
+        Partial<MovementComponent> &
+        Partial<HealthComponent>
+}> = ({entity}) => {
+    const [isVisible, setIsVisible] = useState(false)
+    return (
+        <div
+            onMouseEnter={() => setIsVisible(true)}
+            onMouseLeave={() => setIsVisible(false)}
+            style={{
+                position: "absolute",
+                width: 200,
+                color: "white",
+                left: entity.x ?? 0,
+                top: entity.y ?? 0,
+                opacity: (isVisible) ? 1 : 0
+            }}>
+            <ul>
+                <li>components: {Array.from(entity.components).join(",")}</li>
+                <li>(x,y): {entity.x}, {entity.y}</li>
+                {entity.destination && <li>destination: ${entity.destination.x}, ${entity.destination.y}</li>}
+                <li>hp: {entity.hitPoints}/{entity.maxHitPoints}</li>
+            </ul>
+        </div>
+    )
+}
+

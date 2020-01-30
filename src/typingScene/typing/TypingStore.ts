@@ -1,6 +1,11 @@
 import {action, computed, observable} from "mobx"
 
 class TypingStore {
+
+
+    @observable
+    keyboardInputStream: string[] = []
+
     @observable
     targetWordIdx: number = 0
 

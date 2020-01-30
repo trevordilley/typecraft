@@ -5,4 +5,7 @@ class EntityStore {
     entities: Entity[] = []
 }
 export const entityStore = new EntityStore()
-export const add = (e: Entity) => entityStore.entities.push(e)
+export const add = (e: Entity): Entity => {
+    entityStore.entities.push(e)
+    return e
+}
