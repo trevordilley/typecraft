@@ -105,7 +105,11 @@ export const TypingScene = observer(() => {
     // Movement System
     const movementSystem = {
         allOf: [PositionComponentKind, MovementComponentKind],
-        execute: (entities: (Partial<PositionComponent> & Partial<MovementComponent> & Entity)[], dt: number) => {
+        execute: (entities: (
+            Partial<PositionComponent> &
+            Partial<MovementComponent> &
+            Partial<SpriteComponent> &
+            Entity)[], dt: number) => {
             return entities.map(e => {
                 if (!e.destination) {
                     return e
@@ -120,6 +124,19 @@ export const TypingScene = observer(() => {
                 }
 
                 const dir = d.subtract(p).normalize().angle()
+                const deg = dir * (180/Math.PI)
+
+
+                // Change sprite orientation, assuming
+                // the sprite is always facing to the "right"
+                if(e.sprite) {
+                    if( deg >= 90 && deg <= 270) {
+                        e.sprite.setFlipX(true)
+                    } else {
+                        e.sprite.setFlipX(false)
+                    }
+                }
+
                 const x = dt * Math.cos(dir) * e.speed! + e.x!
                 const y = dt * Math.sin(dir) * e.speed! + e.y!
                 return {...e, x, y}
