@@ -153,6 +153,7 @@ export const TypingScene = observer(() => {
     }
 
 
+
     const TypingSceneConfig = {
         ...BASE_CONFIG,
         scene: {
@@ -259,28 +260,6 @@ export const TypingScene = observer(() => {
                     currentSpawn: trTower as unknown as SpawnPoint
                 }
 
-                // Stub AI loop
-                const randomBehaviour = (player: Player, opponent: Player) => {
-                    const spawnSquad = (p: SpawnPoint, p2: SpawnPoint) => {
-                        const e: Entity & Partial<MovementComponent> & Partial<PositionComponent> = spawn(Minotaur(0, 0), p)
-                        e.destination! = {x: p2.x, y: e.y!}
-                        add(e)
-                    }
-                    const rand = randomInt(5)
-                    if (rand > 2) {
-                        spawnSquad(player.topSpawn, opponent.topSpawn)
-                    } else {
-                        spawnSquad(player.bottomSpawn, opponent.bottomSpawn)
-                    }
-
-                }
-                setInterval(() => {
-                    if (randomInt(10) > 5) {
-                        randomBehaviour(playerStore.player1!, playerStore.player2!)
-                    } else {
-                        randomBehaviour(playerStore.player2!, playerStore.player1!)
-                    }
-                }, 5000)
             },
 
             /***********************
@@ -340,6 +319,7 @@ export const TypingScene = observer(() => {
                     <li>Debug UI Enabled: {debugStore.debugUiEnabled ? "True" : "False"}</li>
                     <li>Paused: {timeStore.paused}</li>
                     <li>Time Dilation: {timeStore.dilation}</li>
+                    <li><button onClick={debugStore.randomSpawn}>Random Spawn</button></li>
                 </ul>
                 <div>
                     <ul>
