@@ -1,12 +1,17 @@
 import {observable} from "mobx"
-import {Player, playerStore, SpawnPoint} from "./players/PlayerStore"
+import {playerStore, SpawnPoint} from "./players/PlayerStore"
 import {Entity} from "../ECS/ECS"
 import {MovementComponent} from "./components/MovementComponent"
 import {PositionComponent} from "./components/PositionComponent"
 import {spawn} from "./components/SpawnedComponent"
-import {Minotaur} from "./entities/minions/Minotaur"
 import {add} from "./EntityStore"
 import {randomBool, randomInt} from "../Util"
+import {Adventurer} from "./entities/minions/Adventurer"
+import {Minotaur} from "./entities/minions/Minotaur"
+import {Dwarf} from "./entities/minions/Dwarf"
+import {Witch} from "./entities/minions/Witch"
+import {Builder} from "./entities/minions/Builder"
+import {Gladiator} from "./entities/minions/Gladiator"
 
 class DebugStore {
     @observable
@@ -17,13 +22,13 @@ class DebugStore {
 
 
     // Stub AI loop
-    randomSpawn ()  {
+    randomSpawn() {
 
         const [player, opponent] = randomBool() ?
             [playerStore.player1, playerStore.player2] :
             [playerStore.player2, playerStore.player1]
 
-        if(!player || !opponent) {
+        if (!player || !opponent) {
             console.log(`Someone isn't defined: Player: ${player}, Opponent: ${opponent}`)
             return
         }

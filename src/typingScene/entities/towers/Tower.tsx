@@ -1,8 +1,7 @@
 import {SpriteComponent, sprited} from "../../components/SpriteComponent"
 import {Entity, entity} from "../../../ECS/ECS"
 import {HealthComponent, healthy} from "../../components/HealthComponent"
-import {sceneStore} from "../../../SceneStore"
-import {TYPING_SCENE_ASSETS} from "../../TypingScene"
+import {Assets} from "../../TypingScene"
 import {SpawnDirection} from "../../players/PlayerStore"
 import {positioned} from "../../components/PositionComponent"
 
@@ -16,7 +15,7 @@ export const Tower =
             healthy(
                 sprited(
                     entity(),
-                    sceneStore.scene!.add.sprite(x, y, TYPING_SCENE_ASSETS.Tower)
+                    Assets.Tower
                 ),
                 hitPoints
             ), x, y),

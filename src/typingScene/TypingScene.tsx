@@ -13,21 +13,19 @@ import {Witch} from "./entities/minions/Witch"
 import {Gladiator} from "./entities/minions/Gladiator"
 import {Minotaur} from "./entities/minions/Minotaur"
 import {engine, Entity} from "../ECS/ECS"
-import {SpriteComponent, SpriteComponentKind} from "./components/SpriteComponent"
+import {AnimationName, animName, SpriteComponent, SpriteComponentKind} from "./components/SpriteComponent"
 import {Tower} from "./entities/towers/Tower"
 import {MovementComponent, MovementComponentKind} from "./components/MovementComponent"
 import {typed} from "./typing/Typing"
 import {HealthComponent, HealthComponentKind} from "./components/HealthComponent"
 import {add, entityStore} from "./EntityStore"
-import {Player, playerStore, SpawnDirection, SpawnPoint} from "./players/PlayerStore"
-import {randomInt} from "../Util"
-import {spawn} from "./components/SpawnedComponent"
+import {playerStore, SpawnDirection, SpawnPoint} from "./players/PlayerStore"
 import {PositionComponent, PositionComponentKind} from "./components/PositionComponent"
 import {debugStore} from "./DebugStore"
 import {timeStore} from "./TimeStore"
 
 
-export enum TYPING_SCENE_ASSETS {
+export enum Assets {
     Tower = "tower",
     Archer = "archer",
     Mage = "mage",
@@ -67,7 +65,7 @@ const onTyping = (character: string) => {
         typingStore.nextWord()
         typingStore.currentWord = ""
         add(Adventurer(70, 100))
-        add(Minotaur(100, 100))
+      //  add(Minotaur(100, 100))
         add(Witch(100, 120))
         add(Builder(50, 80))
         add(Gladiator(90, 90))
@@ -102,6 +100,7 @@ export const TypingScene = observer(() => {
             }
         }
 
+
     // Movement System
     const movementSystem = {
         allOf: [PositionComponentKind, MovementComponentKind],
@@ -112,6 +111,7 @@ export const TypingScene = observer(() => {
             Entity)[], dt: number) => {
             return entities.map(e => {
                 if (!e.destination) {
+                    e.sprite?.anims.play(animName(AnimationName.IDLE, e.asset!), true)
                     return e
                 }
 
@@ -124,13 +124,13 @@ export const TypingScene = observer(() => {
                 }
 
                 const dir = d.subtract(p).normalize().angle()
-                const deg = dir * (180/Math.PI)
-
+                const deg = dir * (180 / Math.PI)
 
                 // Change sprite orientation, assuming
                 // the sprite is always facing to the "right"
-                if(e.sprite) {
-                    if( deg >= 90 && deg <= 270) {
+                if (e.sprite) {
+                    e.sprite?.anims.play(animName(AnimationName.MOVING, e.asset!), true)
+                    if (deg >= 90 && deg <= 270) {
                         e.sprite.setFlipX(true)
                     } else {
                         e.sprite.setFlipX(false)
@@ -153,7 +153,6 @@ export const TypingScene = observer(() => {
     }
 
 
-
     const TypingSceneConfig = {
         ...BASE_CONFIG,
         scene: {
@@ -164,36 +163,36 @@ export const TypingScene = observer(() => {
              ***********************/
             preload: function () {
                 sceneStore.scene = this as unknown as Phaser.Scene
-                sceneStore.scene!.load.image(TYPING_SCENE_ASSETS.Tower, "/assets/tower_round.svg")
-                sceneStore.scene!.load.image(TYPING_SCENE_ASSETS.Mage, "/assets/robe.png")
-                sceneStore.scene!.load.image(TYPING_SCENE_ASSETS.Archer, "/assets/Archer.png")
-                sceneStore.scene!.load.image(TYPING_SCENE_ASSETS.Rogue, "/assets/rogue.png")
-                sceneStore.scene!.load.image(TYPING_SCENE_ASSETS.Fighter, "/assets/swordwoman.png")
+                sceneStore.scene!.load.image(Assets.Tower, "/assets/tower_round.svg")
+                sceneStore.scene!.load.image(Assets.Mage, "/assets/robe.png")
+                sceneStore.scene!.load.image(Assets.Archer, "/assets/Archer.png")
+                sceneStore.scene!.load.image(Assets.Rogue, "/assets/rogue.png")
+                sceneStore.scene!.load.image(Assets.Fighter, "/assets/swordwoman.png")
 
                 // https://opengameart.org/content/pixel-art-minotaur-sprites
                 // Upscale them using this command:
                 // convert adventurer-sheet.png -filter point -resize 200% adventurer-sheet-big.png
-                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Adventurer, "/assets/adventurer-sheet-big.png", {
+                sceneStore.scene!.load.spritesheet(Assets.Adventurer, "/assets/adventurer-sheet-big.png", {
                     frameWidth: 64,
                     frameHeight: 64
                 })
-                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Builder, "/assets/builder-sheet-big.png", {
+                sceneStore.scene!.load.spritesheet(Assets.Builder, "/assets/builder-sheet-big.png", {
                     frameWidth: 64,
                     frameHeight: 64
                 })
-                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Dwarf, "/assets/dwarf-sheet-big.png", {
+                sceneStore.scene!.load.spritesheet(Assets.Dwarf, "/assets/dwarf-sheet-big.png", {
                     frameWidth: 64,
                     frameHeight: 64
                 })
-                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Gladiator, "/assets/gladiator-sheet-big.png", {
+                sceneStore.scene!.load.spritesheet(Assets.Gladiator, "/assets/gladiator-sheet-big.png", {
                     frameWidth: 64,
                     frameHeight: 64
                 })
-                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Minotaur, "/assets/minotaur-sheet-big.png", {
+                sceneStore.scene!.load.spritesheet(Assets.Minotaur, "/assets/minotaur-sheet-big.png", {
                     frameWidth: 128,
                     frameHeight: 128
                 })
-                sceneStore.scene!.load.spritesheet(TYPING_SCENE_ASSETS.Witch, "/assets/witch-sheet-big.png", {
+                sceneStore.scene!.load.spritesheet(Assets.Witch, "/assets/witch-sheet-big.png", {
                     frameWidth: 64,
                     frameHeight: 64
                 })
@@ -216,7 +215,7 @@ export const TypingScene = observer(() => {
 
                 sceneStore.scene!.anims.create({
                         key: "idle",
-                        frames: sceneStore.scene!.anims.generateFrameNumbers(TYPING_SCENE_ASSETS.Adventurer, {
+                        frames: sceneStore.scene!.anims.generateFrameNumbers(Assets.Adventurer, {
                             start: 0,
                             end: 12
                         }),
@@ -233,7 +232,7 @@ export const TypingScene = observer(() => {
                             debugStore.debugUiEnabled = !debugStore.debugUiEnabled
                             return
                         }
-                        if(e.key === "Escape") {
+                        if (e.key === "Escape") {
                             timeStore.togglePause()
                         }
                         if (cursors.up?.isDown || cursors.down?.isDown || cursors.right?.isDown || cursors.left?.isDown || !e.key || e.key === "Shift")
@@ -319,7 +318,9 @@ export const TypingScene = observer(() => {
                     <li>Debug UI Enabled: {debugStore.debugUiEnabled ? "True" : "False"}</li>
                     <li>Paused: {timeStore.paused}</li>
                     <li>Time Dilation: {timeStore.dilation}</li>
-                    <li><button onClick={debugStore.randomSpawn}>Random Spawn</button></li>
+                    <li>
+                        <button onClick={debugStore.randomSpawn}>Random Spawn</button>
+                    </li>
                 </ul>
                 <div>
                     <ul>
