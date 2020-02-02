@@ -2,12 +2,14 @@ import {Entity} from "../../../ECS/ECS"
 import {DEFAULT_SPEED, Minion} from "./Minion"
 import {Assets} from "../../TypingScene"
 import {AnimationName} from "../../components/SpriteComponent"
+import {Player} from "../../players/PlayerStore"
 
 const defaultHitPoints = 100
 const defaultSpeed = DEFAULT_SPEED
 export const Minotaur = (
     x: number,
     y: number,
+    commander: Player,
     hitPoints?: number,
     speed?: number
 ): Entity =>
@@ -16,6 +18,7 @@ export const Minotaur = (
         x, y,
         speed ?? defaultSpeed,
         Assets.Minotaur,
+        commander,
         [
             {name: AnimationName.IDLE, start: 0, end: 4, frameRate: 20},
             {name: AnimationName.MOVING, start: 11, end: 18, frameRate: 20},

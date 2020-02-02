@@ -11,7 +11,6 @@ import {Dwarf} from "./entities/minions/Dwarf"
 import {Builder} from "./entities/minions/Builder"
 import {Witch} from "./entities/minions/Witch"
 import {Gladiator} from "./entities/minions/Gladiator"
-import {Minotaur} from "./entities/minions/Minotaur"
 import {engine, Entity} from "../ECS/ECS"
 import {AnimationName, animName, SpriteComponent, SpriteComponentKind} from "./components/SpriteComponent"
 import {Tower} from "./entities/towers/Tower"
@@ -23,7 +22,8 @@ import {playerStore, SpawnDirection, SpawnPoint} from "./players/PlayerStore"
 import {PositionComponent, PositionComponentKind} from "./components/PositionComponent"
 import {debugStore} from "./DebugStore"
 import {timeStore} from "./TimeStore"
-
+import {CombatantComponent, CombatantComponentKind} from "./components/CombatantComponent"
+import {DeathComponent, DeathComponentKind, DeathState, dying} from "./components/DeathComponent"
 
 export enum Assets {
     Tower = "tower",
@@ -64,12 +64,12 @@ const onTyping = (character: string) => {
     if (nextWord) {
         typingStore.nextWord()
         typingStore.currentWord = ""
-        add(Adventurer(70, 100))
-      //  add(Minotaur(100, 100))
-        add(Witch(100, 120))
-        add(Builder(50, 80))
-        add(Gladiator(90, 90))
-        add(Dwarf(90, 70))
+        add(Adventurer(70, 100, playerStore.player1!))
+        //  add(Minotaur(100, 100))
+        add(Witch(100, 120,  playerStore.player1!))
+        add(Builder(50, 80,  playerStore.player1!))
+        add(Gladiator(90, 90,  playerStore.player1!))
+        add(Dwarf(90, 70,  playerStore.player1!))
     } else {
         typingStore.currentWord = currentWord
     }
@@ -104,6 +104,7 @@ export const TypingScene = observer(() => {
     // Movement System
     const movementSystem = {
         allOf: [PositionComponentKind, MovementComponentKind],
+        noneOf: [DeathComponentKind],
         execute: (entities: (
             Partial<PositionComponent> &
             Partial<MovementComponent> &
@@ -144,14 +145,89 @@ export const TypingScene = observer(() => {
         }
     }
 
-    // Still Alive System
-    const stillAliveSystem = {
+    const healthSystem = {
         allOf: [HealthComponentKind],
+        noneOf: [DeathComponentKind],
         execute: (entities: (Partial<HealthComponent> & Entity)[]) => {
-            return entities.filter(e => e.hitPoints! >= 0)
+            return entities.map(entity => {
+                    const damage = entity.damages!.reduce((c, d) => c + d, 0)
+                    entity.damages = []
+                    entity.hitPoints! -= damage
+                    return (entity.hitPoints! <= 0) ? dying(entity) : entity
+                }
+            )
         }
     }
 
+    const deathSystem = {
+        allOf: [DeathComponentKind],
+        execute: (entities: (Partial<SpriteComponent> & Partial<DeathComponent> & Entity)[]) => {
+
+            return entities.map(entity => {
+               if(entity.sprite  ) {
+                   if(entity.deathState === DeathState.NEW_DYING) {
+                       entity.deathState = DeathState.DYING
+                       entity.sprite?.anims.play(animName(AnimationName.DEATH, entity.asset!), true)
+                   }
+                   else if (entity.deathState === DeathState.DYING) {
+                       console.log(entity.sprite?.anims.getProgress())
+                       if(entity.sprite?.anims.getProgress() === 1) {
+                           console.log("Should be dead?")
+                           entity.deathState = DeathState.DEAD
+                       }
+                   }
+                   else if (entity.deathState === DeathState.DEAD) {
+                       console.log("Destroy?")
+                       entity.sprite.destroy()
+                       entity.components.clear()
+                   }
+               }
+               else {
+                   entity.deathState = DeathState.DEAD
+               }
+               return entity
+            })
+        }
+    }
+
+    // Likely a system that will need all kinds of optimizations
+    // May want to introduce another system which breaks up the positions
+    // of Entities into grids so entities don't have to check their
+    // distances against all other entities
+    // Checking distances could be something we offload to a web-worker
+    // potentially
+    const attackSystem = {
+        allOf: [CombatantComponentKind, PositionComponentKind, HealthComponentKind, MovementComponentKind],
+        execute: (
+            entities: (Partial<MovementComponent> & Partial<CombatantComponent> & Partial<PositionComponent> & Partial<HealthComponent> & Entity)[], dt: number) => {
+
+            // Just do it the dummy simple way.
+            entities.forEach(e => {
+                if (e.attack!.curCooldown > 0) {
+                    e.attack!.curCooldown -= dt
+                    return e
+                }
+
+                entities.forEach(o => {
+                    if (e.commander !== o.commander) {
+                        const attack = e.attack!
+                        const ePos = new Phaser.Math.Vector2(e.x!, e.y!)
+                        const oPos = new Phaser.Math.Vector2(o.x!, o.y!)
+                        const dist = oPos.distance(ePos)
+                        if (dist < attack!.range) {
+                            e.destination = undefined
+                            e.attack!.curCooldown = attack.maxCooldown
+                            o.damages!.push(attack.damage)
+                        }
+                        else if (!e.destination) {
+                            e.destination = e.finalDestination
+                        }
+                    }
+                })
+            })
+            return entities
+        }
+    }
 
     const TypingSceneConfig = {
         ...BASE_CONFIG,
@@ -287,7 +363,9 @@ export const TypingScene = observer(() => {
                     [
                         positionSystem,
                         movementSystem,
-                        stillAliveSystem
+                        healthSystem,
+                        attackSystem,
+                        deathSystem,
                     ],
                     deltaTime
                 )
@@ -343,6 +421,7 @@ const DebugEntity: React.FC<{
     entity: Entity &
         Partial<PositionComponent> &
         Partial<MovementComponent> &
+        Partial<DeathComponent> &
         Partial<HealthComponent>
 }> = ({entity}) => {
     const [isVisible, setIsVisible] = useState(false)
@@ -363,6 +442,7 @@ const DebugEntity: React.FC<{
                 <li>(x,y): {entity.x}, {entity.y}</li>
                 {entity.destination && <li>destination: ${entity.destination.x}, ${entity.destination.y}</li>}
                 <li>hp: {entity.hitPoints}/{entity.maxHitPoints}</li>
+                <li>deathState: {entity.deathState}</li>
             </ul>
         </div>
     )

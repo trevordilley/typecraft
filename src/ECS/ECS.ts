@@ -34,7 +34,7 @@ export const engine = (
     systems: System[],
     deltaTime: number
 ): Entity[] => {
-    let entities: Entity[] = allEntities
+    let entities: Entity[] = allEntities.filter(e => e.components.size > 0)
     systems.forEach(s => {
         const [toProcess, others] = _.partition(entities, e => {
             const all = (s.allOf) ? allOf(e, Array.from(s.allOf)) : true
