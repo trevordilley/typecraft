@@ -12,13 +12,19 @@ class TypingStore {
     @observable
     wordLibrary: string[] = [
         "Clojure",
+        "Elm",
+        "Erlang",
         "Haskell",
+        "Elixer",
         "Ocaml",
         "Kotlin",
         "ReasonML",
         "Scala",
         "Eta",
         "Idris",
+        "Racket",
+        "Scheme",
+        "APL",
     ]
 
     @observable

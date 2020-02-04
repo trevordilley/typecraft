@@ -18,7 +18,7 @@ import {MovementComponent, MovementComponentKind} from "./components/MovementCom
 import {typed} from "./typing/Typing"
 import {HealthComponent, HealthComponentKind} from "./components/HealthComponent"
 import {add, entityStore} from "./EntityStore"
-import {LanePosition, playerStore, SpawnDirection, SpawnPoint} from "./players/PlayerStore"
+import {Lane, LanePosition, Player, playerStore, SpawnDirection, SpawnPoint} from "./players/PlayerStore"
 import {PositionComponent, PositionComponentKind} from "./components/PositionComponent"
 import {debugStore} from "./DebugStore"
 import {timeStore} from "./TimeStore"
@@ -51,6 +51,36 @@ const outdoorMap = {
 
 let cursors: Phaser.Types.Input.Keyboard.CursorKeys
 
+const spawnSquad = (player: Player) => {
+    const lane = getLane(player)
+    add(spawn(Adventurer(70, 100, player), lane))
+    add(spawn(Witch(100, 120, player), lane))
+    add(spawn(Builder(50, 80, player), lane))
+    add(spawn(Gladiator(90, 90, player), lane))
+    add(spawn(Dwarf(90, 70, player), lane))
+
+}
+const getLane = (player: Player): Lane =>
+    (player.currentLanePosition === LanePosition.TOP) ?
+        player.topLane :
+        player.bottomLane
+
+// Dummy AI
+setInterval(() => {
+    if (playerStore.player2) {
+        const shouldLaneSwitch = randomInt(100) > 80
+        if (shouldLaneSwitch) {
+            if (playerStore.player2.currentLanePosition === LanePosition.TOP) {
+                playerStore.player2.currentLanePosition = LanePosition.BOTTOM
+            } else {
+                playerStore.player2.currentLanePosition = LanePosition.TOP
+            }
+        }
+        spawnSquad(playerStore.player2)
+    }
+
+}, 3000)
+
 const onTyping = (character: string) => {
 
     const {nextWord, points, currentStreak, currentWord} = typed({
@@ -65,20 +95,13 @@ const onTyping = (character: string) => {
     typingStore.points = points
     if (nextWord) {
         typingStore.nextWord()
+        spawnSquad(playerStore.player1!)
         typingStore.currentWord = ""
-        const lane =
-            (playerStore.player1!.currentLanePosition === LanePosition.TOP) ?
-            playerStore.player1!.topLane! :
-            playerStore.player1!.bottomLane!
-        add(spawn(Adventurer(70, 100, playerStore.player1!),lane))
-        add(spawn(Witch(100, 120,  playerStore.player1!),lane))
-        add(spawn(Builder(50, 80,  playerStore.player1!),lane))
-        add(spawn(Gladiator(90, 90,  playerStore.player1!),lane))
-        add(spawn(Dwarf(90, 70,  playerStore.player1!),lane))
     } else {
         typingStore.currentWord = currentWord
     }
 }
+
 
 export const TypingScene = observer(() => {
 
@@ -169,27 +192,24 @@ export const TypingScene = observer(() => {
         execute: (entities: (Partial<SpriteComponent> & Partial<DeathComponent> & Entity)[]) => {
 
             return entities.map(entity => {
-               if(entity.sprite  ) {
-                   if(entity.deathState === DeathState.NEW_DYING) {
-                       entity.deathState = DeathState.DYING
-                       entity.sprite?.anims.play(animName(AnimationName.DEATH, entity.asset!), true)
-                   }
-                   else if (entity.deathState === DeathState.DYING) {
-                       // getProgress() doesn't seem to sync up with the animations quite correctly
-                       // or I have empty frames in the death frames?
-                       if(entity.sprite?.anims.getProgress() === 1) {
-                           entity.deathState = DeathState.DEAD
-                       }
-                   }
-                   else if (entity.deathState === DeathState.DEAD) {
-                       entity.sprite.destroy()
-                       entity.components.clear()
-                   }
-               }
-               else {
-                   entity.deathState = DeathState.DEAD
-               }
-               return entity
+                if (entity.sprite) {
+                    if (entity.deathState === DeathState.NEW_DYING) {
+                        entity.deathState = DeathState.DYING
+                        entity.sprite?.anims.play(animName(AnimationName.DEATH, entity.asset!), true)
+                    } else if (entity.deathState === DeathState.DYING) {
+                        // getProgress() doesn't seem to sync up with the animations quite correctly
+                        // or I have empty frames in the death frames?
+                        if (entity.sprite?.anims.getProgress() === 1) {
+                            entity.deathState = DeathState.DEAD
+                        }
+                    } else if (entity.deathState === DeathState.DEAD) {
+                        entity.sprite.destroy()
+                        entity.components.clear()
+                    }
+                } else {
+                    entity.deathState = DeathState.DEAD
+                }
+                return entity
             })
         }
     }
@@ -202,7 +222,7 @@ export const TypingScene = observer(() => {
     // potentially
     const attackSystem = {
         allOf: [CombatantComponentKind, PositionComponentKind, HealthComponentKind, MovementComponentKind],
-        noneOf:[DeathComponentKind],
+        noneOf: [DeathComponentKind],
         execute: (
             entities: (Partial<MovementComponent> & Partial<CombatantComponent> & Partial<PositionComponent> & Partial<HealthComponent> & Entity)[], dt: number) => {
 
@@ -225,8 +245,7 @@ export const TypingScene = observer(() => {
                             const damage = randomInt(attack.damage)
                             o.damages!.push(damage)
                             return e
-                        }
-                        else if (!e.destination) {
+                        } else if (!e.destination) {
                             console.log("Moving along now?")
                             console.log(e.finalDestination)
                             e.destination = e.finalDestination
@@ -235,6 +254,26 @@ export const TypingScene = observer(() => {
                 })
             })
             return entities
+        }
+    }
+
+    const towerClaimPointsSystem = {
+        allOf: [MovementComponentKind, CombatantComponentKind],
+        noneOf: [DeathComponentKind],
+        execute: (
+            entities: (Partial<MovementComponent> & Partial<CombatantComponent> & Partial<PositionComponent> & Entity)[]) => {
+            return entities.map(e => {
+                if (e.finalDestination) {
+                    const p = new Phaser.Math.Vector2(e.x, e.y)
+                    const d = new Phaser.Math.Vector2(e.finalDestination.x, e.finalDestination.y)
+                    const dist = p.distance(d)
+                    if (dist < 10) {
+                        e.commander!.towerPoints += 1
+                        return dying(e)
+                    }
+                }
+                return e
+            })
         }
     }
 
@@ -317,12 +356,11 @@ export const TypingScene = observer(() => {
                             debugStore.debugUiEnabled = !debugStore.debugUiEnabled
                             return
                         }
-                        if (e.key === "Tab") {
-                            if(playerStore.player1?.currentLanePosition === LanePosition.TOP){
+                        if (e.key === " ") {
+                            if (playerStore.player1?.currentLanePosition === LanePosition.TOP) {
                                 playerStore.player1!.currentLanePosition = LanePosition.BOTTOM
-                            }
-                            else {
-                               playerStore.player1!.currentLanePosition = LanePosition.TOP
+                            } else {
+                                playerStore.player1!.currentLanePosition = LanePosition.TOP
                             }
                             return
                         }
@@ -353,7 +391,8 @@ export const TypingScene = observer(() => {
                         destination: brTower as unknown as SpawnPoint
                     },
                     currentLanePosition: LanePosition.TOP,
-                    tint: 0xaaffaa
+                    tint: 0xaaffaa,
+                    towerPoints: 0
                 }
                 playerStore.player2 = {
                     topLane: {
@@ -365,7 +404,8 @@ export const TypingScene = observer(() => {
                         destination: blTower as unknown as SpawnPoint
                     },
                     currentLanePosition: LanePosition.TOP,
-                    tint: 0xffaaaa
+                    tint: 0xffaaaa,
+                    towerPoints: 0
                 }
 
             },
@@ -398,7 +438,8 @@ export const TypingScene = observer(() => {
                         movementSystem,
                         healthSystem,
                         attackSystem,
-                        deathSystem,
+                        towerClaimPointsSystem,
+                        deathSystem
                     ],
                     deltaTime
                 )
@@ -417,31 +458,35 @@ export const TypingScene = observer(() => {
             </div>
             <div style={{display: "flex", flexDirection: "row", justifyContent: "space-around"}}>
                 <div>
-                    Points: {typingStore.points}
-                    <br/>
-                    Current Streak: {typingStore.currentStreak}
-                    <br/>
-                    Streak Points: {typingStore.streakPoints}
+                    <h3>
+                        Player 1 Points: {playerStore.player1?.towerPoints}
+                    </h3>
+                    <h3>
+                        Player 2 Points: {playerStore.player2?.towerPoints}
+                    </h3>
                 </div>
-                <ul>
-                    <li>Entity Count: {entityStore.entities.length}</li>
-                    <li>Last Key: {debugStore.debugLastKeyPressed}</li>
-                    <li>Debug UI Enabled: {debugStore.debugUiEnabled ? "True" : "False"}</li>
-                    <li>Paused: {timeStore.paused}</li>
-                    <li>Time Dilation: {timeStore.dilation}</li>
-                    <li>
-                        <button onClick={debugStore.forceSpawn}>Force Spawn</button>
-                    </li>
-                </ul>
                 <div>
                     <ul>
-                        <li>Properly spawn minions (give them a proper destination) </li>
-                        <li>Typing creates batch of minions</li>
-                        <li>Tab changes lane</li>
+                        <li>Space changes lane</li>
                         <li>Streaks allow purchase of upgrades to minion squad</li>
                         <li>Typing is actually in a time window</li>
                     </ul>
                 </div>
+                <div>
+                    <h2>Current Streak: {typingStore.currentStreak}</h2>
+                </div>
+                {debugStore.debugUiEnabled && <div>
+                    <ul>
+                        <li>Entity Count: {entityStore.entities.length}</li>
+                        <li>Last Key: {debugStore.debugLastKeyPressed}</li>
+                        <li>Paused: {timeStore.paused}</li>
+                        <li>Time Dilation: {timeStore.dilation}</li>
+                        <li>
+                            <button onClick={debugStore.forceSpawn}>Force Spawn</button>
+                        </li>
+                    </ul>
+
+                </div>}
             </div>
             {
                 debugStore.debugUiEnabled &&
@@ -474,7 +519,8 @@ const DebugEntity: React.FC<{
             <ul>
                 <li>components: {Array.from(entity.components).join(",")}</li>
                 <li>(x,y): {entity.x!.toFixed(1)}, {entity.y!.toFixed(1)}</li>
-                {entity.destination && <li>destination: ${entity.destination.x.toFixed(1)}, ${entity.destination.y.toFixed(1)}</li>}
+                {entity.destination &&
+                <li>destination: ${entity.destination.x.toFixed(1)}, ${entity.destination.y.toFixed(1)}</li>}
                 <li>hp: {entity.hitPoints}/{entity.maxHitPoints}</li>
                 <li>deathState: {entity.deathState}</li>
                 <li>{entity.damages?.join(",")}</li>

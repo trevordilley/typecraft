@@ -12,6 +12,7 @@ export const spawn = (entity: Entity & Partial<MovementComponent>, lane: Lane ):
         x: lane.origin.x + ((lane.origin.spawnDirection === SpawnDirection.LEFT) ? -spawnOffset : spawnOffset),
         y: lane.origin.y + randomInt(spawnRadius) * (randomInt(10) > 5 ? 1 : -1),
         spawnDirection: lane.origin.spawnDirection,
+        destination: lane.destination,
         finalDestination: lane.destination,
         components: entity.components.add(SpawnedComponentKind),
     })
