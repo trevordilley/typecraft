@@ -116,7 +116,7 @@ export const TypingScene = observer(() => {
      Systems
      ***********************/
 
-        // Position System (make sprites respect the x,y on the entity itself)
+    // Position System (make sprites respect the x,y on the entity itself)
     const positionSystem = {
             allOf: [SpriteComponentKind, PositionComponentKind],
             execute: (entities: (Partial<SpriteComponent> & Partial<PositionComponent> & Entity)[]) => {
@@ -220,6 +220,9 @@ export const TypingScene = observer(() => {
     // distances against all other entities
     // Checking distances could be something we offload to a web-worker
     // potentially
+    //
+    // UPDATE: Oh yeah, this system tanks perf. Game can only handle around
+    // 100 entities because of this big dummy.
     const attackSystem = {
         allOf: [CombatantComponentKind, PositionComponentKind, HealthComponentKind, MovementComponentKind],
         noneOf: [DeathComponentKind],
@@ -468,8 +471,8 @@ export const TypingScene = observer(() => {
                 <div>
                     <ul>
                         <li>Space changes lane</li>
-                        <li>Streaks allow purchase of upgrades to minion squad</li>
-                        <li>Typing is actually in a time window</li>
+                        <li>Escape pauses game</li>
+                        <li>Backtick ( ` ) sets debug mode </li>
                     </ul>
                 </div>
                 <div>

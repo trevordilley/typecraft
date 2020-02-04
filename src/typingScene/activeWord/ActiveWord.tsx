@@ -38,11 +38,11 @@ export const ActiveWord: React.FC<{ targetWord: string, currentWord: string }> =
                 flexDirection: "column",
                 justifyContent: "center",
                 fontSize: THEME.typingFontSize,
-                color: "#f0d",
+                color: "#aaf",
             }}
             >
                 <div style={{display: "flex", justifyContent: "center"}}>
-                    <div style={{position: "absolute", color: "#ddd", width: wordPixelWidth}}>
+                    <div style={{position: "absolute", color: "#ededed", width: wordPixelWidth}}>
                         <Word id={"target"} word={targetWord}/>
                     </div>
                     <div style={{position: "absolute", width: wordPixelWidth}}>

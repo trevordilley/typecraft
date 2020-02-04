@@ -12,7 +12,6 @@ export const typed = (typingState: TypingState): TypingState => {
     let {points, currentStreak, currentWord, nextWord} = typingState
     const newWord = `${currentWord}${character}`
     if (targetWord.startsWith(newWord)) {
-        // Cool we got the correct character
         points += 1
         currentStreak += 1
         currentWord = newWord

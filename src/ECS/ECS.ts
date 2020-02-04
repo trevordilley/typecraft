@@ -13,8 +13,8 @@ export interface System {
 }
 
 const allOf = (entity: Entity, expected: string[]): boolean =>
-    expected //?
-        .map (e => entity.components.has(e)) //?
+    expected
+        .map (e => entity.components.has(e))
         .reduce((p, c) => p && c)
 
 
