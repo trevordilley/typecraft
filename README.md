@@ -7,10 +7,17 @@ Reactified Phaser game component found here: https://github.com/trevordilley/rea
 Goals were to test how effective an ECS system which takes advantage of javascripts spread operator
 to "build up" an entity instead of the standard Entity with a map of Components approach. 
 
-## ECS
+## Entity-Component-System (ECS)
 Found here: https://github.com/trevordilley/typecraft/blob/master/src/ECS/ECS.ts
 
-The ECS is very naive, with a very deliberate decision to keep it as trimmed down as possible. The
+An ECS is a common architecture for the gameplay logic portion of a game. An `Entity` is a _thing_ 
+which contains `Components`. A component is generally a collection of related data (A `PositionComponent` may 
+have `x` and `y` attributes  for example, or a `HealthComponent` have a `hitPoints` attribute). Then a `System`
+is something which acts on a group of entities with a certain set of components (A `HealthSystem` may process all
+entities that have a `HealthComponent` for example). This allows you narrow down how different parts of the game work
+in a really nice way. 
+
+The ECS implemented here is very naive, with a very deliberate decision to keep it as trimmed down as possible. The
 "engine" is just a function which maps over all systems and applies their changes to the entities. 
 
 ## Available Scripts
