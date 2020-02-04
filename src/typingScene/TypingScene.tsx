@@ -18,12 +18,14 @@ import {MovementComponent, MovementComponentKind} from "./components/MovementCom
 import {typed} from "./typing/Typing"
 import {HealthComponent, HealthComponentKind} from "./components/HealthComponent"
 import {add, entityStore} from "./EntityStore"
-import {playerStore, SpawnDirection, SpawnPoint} from "./players/PlayerStore"
+import {LanePosition, playerStore, SpawnDirection, SpawnPoint} from "./players/PlayerStore"
 import {PositionComponent, PositionComponentKind} from "./components/PositionComponent"
 import {debugStore} from "./DebugStore"
 import {timeStore} from "./TimeStore"
 import {CombatantComponent, CombatantComponentKind} from "./components/CombatantComponent"
 import {DeathComponent, DeathComponentKind, DeathState, dying} from "./components/DeathComponent"
+import {randomInt} from "../Util"
+import {spawn} from "./components/SpawnedComponent"
 
 export enum Assets {
     Tower = "tower",
@@ -64,12 +66,15 @@ const onTyping = (character: string) => {
     if (nextWord) {
         typingStore.nextWord()
         typingStore.currentWord = ""
-        add(Adventurer(70, 100, playerStore.player1!))
-        //  add(Minotaur(100, 100))
-        add(Witch(100, 120,  playerStore.player1!))
-        add(Builder(50, 80,  playerStore.player1!))
-        add(Gladiator(90, 90,  playerStore.player1!))
-        add(Dwarf(90, 70,  playerStore.player1!))
+        const lane =
+            (playerStore.player1!.currentLanePosition === LanePosition.TOP) ?
+            playerStore.player1!.topLane! :
+            playerStore.player1!.bottomLane!
+        add(spawn(Adventurer(70, 100, playerStore.player1!),lane))
+        add(spawn(Witch(100, 120,  playerStore.player1!),lane))
+        add(spawn(Builder(50, 80,  playerStore.player1!),lane))
+        add(spawn(Gladiator(90, 90,  playerStore.player1!),lane))
+        add(spawn(Dwarf(90, 70,  playerStore.player1!),lane))
     } else {
         typingStore.currentWord = currentWord
     }
@@ -121,7 +126,7 @@ export const TypingScene = observer(() => {
 
                 // They have reached their destination
                 if (d.distance(p) < 5) {
-                    return {...e, destination: undefined}
+                    return {...e, destination: undefined, finalDestination: undefined}
                 }
 
                 const dir = d.subtract(p).normalize().angle()
@@ -170,14 +175,13 @@ export const TypingScene = observer(() => {
                        entity.sprite?.anims.play(animName(AnimationName.DEATH, entity.asset!), true)
                    }
                    else if (entity.deathState === DeathState.DYING) {
-                       console.log(entity.sprite?.anims.getProgress())
+                       // getProgress() doesn't seem to sync up with the animations quite correctly
+                       // or I have empty frames in the death frames?
                        if(entity.sprite?.anims.getProgress() === 1) {
-                           console.log("Should be dead?")
                            entity.deathState = DeathState.DEAD
                        }
                    }
                    else if (entity.deathState === DeathState.DEAD) {
-                       console.log("Destroy?")
                        entity.sprite.destroy()
                        entity.components.clear()
                    }
@@ -198,6 +202,7 @@ export const TypingScene = observer(() => {
     // potentially
     const attackSystem = {
         allOf: [CombatantComponentKind, PositionComponentKind, HealthComponentKind, MovementComponentKind],
+        noneOf:[DeathComponentKind],
         execute: (
             entities: (Partial<MovementComponent> & Partial<CombatantComponent> & Partial<PositionComponent> & Partial<HealthComponent> & Entity)[], dt: number) => {
 
@@ -214,12 +219,16 @@ export const TypingScene = observer(() => {
                         const ePos = new Phaser.Math.Vector2(e.x!, e.y!)
                         const oPos = new Phaser.Math.Vector2(o.x!, o.y!)
                         const dist = oPos.distance(ePos)
-                        if (dist < attack!.range) {
+                        if (dist <= attack!.range) {
                             e.destination = undefined
                             e.attack!.curCooldown = attack.maxCooldown
-                            o.damages!.push(attack.damage)
+                            const damage = randomInt(attack.damage)
+                            o.damages!.push(damage)
+                            return e
                         }
                         else if (!e.destination) {
+                            console.log("Moving along now?")
+                            console.log(e.finalDestination)
                             e.destination = e.finalDestination
                         }
                     }
@@ -308,8 +317,18 @@ export const TypingScene = observer(() => {
                             debugStore.debugUiEnabled = !debugStore.debugUiEnabled
                             return
                         }
+                        if (e.key === "Tab") {
+                            if(playerStore.player1?.currentLanePosition === LanePosition.TOP){
+                                playerStore.player1!.currentLanePosition = LanePosition.BOTTOM
+                            }
+                            else {
+                               playerStore.player1!.currentLanePosition = LanePosition.TOP
+                            }
+                            return
+                        }
                         if (e.key === "Escape") {
                             timeStore.togglePause()
+                            return
                         }
                         if (cursors.up?.isDown || cursors.down?.isDown || cursors.right?.isDown || cursors.left?.isDown || !e.key || e.key === "Shift")
                             return
@@ -321,18 +340,32 @@ export const TypingScene = observer(() => {
 
                 const tlTower = add(Tower(100, 100, SpawnDirection.RIGHT))
                 const blTower = add(Tower(100, 400, SpawnDirection.RIGHT))
-                playerStore.player1 = {
-                    topSpawn: tlTower as unknown as SpawnPoint,
-                    bottomSpawn: blTower as unknown as SpawnPoint,
-                    currentSpawn: tlTower as unknown as SpawnPoint
-                }
 
                 const trTower = add(Tower(1100, 100, SpawnDirection.LEFT))
                 const brTower = add(Tower(1100, 400, SpawnDirection.LEFT))
+                playerStore.player1 = {
+                    topLane: {
+                        origin: tlTower as unknown as SpawnPoint,
+                        destination: trTower as unknown as SpawnPoint
+                    },
+                    bottomLane: {
+                        origin: blTower as unknown as SpawnPoint,
+                        destination: brTower as unknown as SpawnPoint
+                    },
+                    currentLanePosition: LanePosition.TOP,
+                    tint: 0xaaffaa
+                }
                 playerStore.player2 = {
-                    topSpawn: trTower as unknown as SpawnPoint,
-                    bottomSpawn: brTower as unknown as SpawnPoint,
-                    currentSpawn: trTower as unknown as SpawnPoint
+                    topLane: {
+                        origin: trTower as unknown as SpawnPoint,
+                        destination: tlTower as unknown as SpawnPoint
+                    },
+                    bottomLane: {
+                        origin: brTower as unknown as SpawnPoint,
+                        destination: blTower as unknown as SpawnPoint
+                    },
+                    currentLanePosition: LanePosition.TOP,
+                    tint: 0xffaaaa
                 }
 
             },
@@ -397,11 +430,12 @@ export const TypingScene = observer(() => {
                     <li>Paused: {timeStore.paused}</li>
                     <li>Time Dilation: {timeStore.dilation}</li>
                     <li>
-                        <button onClick={debugStore.randomSpawn}>Random Spawn</button>
+                        <button onClick={debugStore.forceSpawn}>Force Spawn</button>
                     </li>
                 </ul>
                 <div>
                     <ul>
+                        <li>Properly spawn minions (give them a proper destination) </li>
                         <li>Typing creates batch of minions</li>
                         <li>Tab changes lane</li>
                         <li>Streaks allow purchase of upgrades to minion squad</li>
@@ -439,10 +473,11 @@ const DebugEntity: React.FC<{
             }}>
             <ul>
                 <li>components: {Array.from(entity.components).join(",")}</li>
-                <li>(x,y): {entity.x}, {entity.y}</li>
-                {entity.destination && <li>destination: ${entity.destination.x}, ${entity.destination.y}</li>}
+                <li>(x,y): {entity.x!.toFixed(1)}, {entity.y!.toFixed(1)}</li>
+                {entity.destination && <li>destination: ${entity.destination.x.toFixed(1)}, ${entity.destination.y.toFixed(1)}</li>}
                 <li>hp: {entity.hitPoints}/{entity.maxHitPoints}</li>
                 <li>deathState: {entity.deathState}</li>
+                <li>{entity.damages?.join(",")}</li>
             </ul>
         </div>
     )

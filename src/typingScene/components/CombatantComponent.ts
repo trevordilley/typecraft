@@ -1,5 +1,6 @@
 import {Entity} from "../../ECS/ECS"
 import {Player} from "../players/PlayerStore"
+import {SpriteComponent} from "./SpriteComponent"
 
 export interface Attack {
     maxCooldown: number,
@@ -15,11 +16,15 @@ export interface CombatantComponent {
     attack: Attack
 }
 
-export const combatant = (entity: Entity, attack: Attack, commander: Player): Entity & CombatantComponent => {
-    return {
+export const combatant = (entity: Entity & Partial<SpriteComponent>, attack: Attack, commander: Player): Entity & CombatantComponent => {
+    const e = {
         ...entity,
         components: entity.components.add(CombatantComponentKind),
         commander,
         attack
     }
+    if (e.sprite) {
+        e.sprite!.tint = commander.tint
+    }
+    return e
 }

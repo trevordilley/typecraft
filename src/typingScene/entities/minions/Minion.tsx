@@ -23,10 +23,10 @@ export const Minion = (
     animData?: AnimData[]
 ): Entity =>
     combatant(positioned(healthy(moves(sprited(entity(), asset, animData), speed), hitPoints), x, y), {
-        curCooldown: 3000,
-        maxCooldown: 3000,
+        curCooldown: 0,
+        maxCooldown: 1500,
         damage: 20,
-        range: 100
+        range: 40
     }, commander)
 
 

@@ -4,7 +4,7 @@ import {Assets} from "../../TypingScene"
 import {AnimationName} from "../../components/SpriteComponent"
 import {Player} from "../../players/PlayerStore"
 
-const defaultHitPoints = 10
+const defaultHitPoints = 100
 const defaultSpeed = DEFAULT_SPEED
 export const Adventurer = (
     x: number,
@@ -20,9 +20,9 @@ export const Adventurer = (
         Assets.Adventurer,
         commander,
         [
-            {name: AnimationName.IDLE, start: 0, end: 12, frameRate: 10},
-            {name: AnimationName.MOVING, start: 13, end: 20, frameRate: 10},
-            {name: AnimationName.ATTACK, start: 49, end: 58, frameRate: 10},
-            {name: AnimationName.DEATH, start: 97, end: 103, frameRate: 10}
+            {name: AnimationName.IDLE, start: 0, end: 12, frameRate: 20},
+            {name: AnimationName.MOVING, start: 13, end: 20, frameRate: 20},
+            {name: AnimationName.ATTACK, start: 49, end: 58, frameRate: 20},
+            {name: AnimationName.DEATH, start: 97, end: 103, frameRate: 20}
         ]
     )

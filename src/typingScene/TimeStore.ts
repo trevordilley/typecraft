@@ -10,7 +10,7 @@ class TimeStore {
     togglePause() {
         this.paused = !this.paused
         if (this.paused) {
-            this.dilation = 0.01
+            this.dilation = 0.1
         } else {
             this.dilation = 1
         }

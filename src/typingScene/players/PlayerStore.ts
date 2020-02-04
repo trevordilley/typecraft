@@ -10,12 +10,20 @@ export interface SpawnPoint {
     y: number,
     spawnDirection: SpawnDirection
 }
+export enum LanePosition {
+    BOTTOM, TOP
+}
 
+export interface Lane {
+    origin: SpawnPoint,
+    destination: SpawnPoint
+}
 
 export interface Player {
-    topSpawn: SpawnPoint,
-    bottomSpawn: SpawnPoint,
-    currentSpawn: SpawnPoint,
+    topLane: Lane,
+    bottomLane: Lane,
+    currentLanePosition: LanePosition,
+    tint: number
 }
 
 

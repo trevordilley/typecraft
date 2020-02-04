@@ -5,11 +5,6 @@ export interface Entity {
 }
 export const entity = (): Entity => ({components: new Set<string>()})
 
-
-export interface EntityComponent {
-    kind: string
-}
-
 export interface System {
     allOf?: string[], // Execute on entities that have all these componentsStrings
     oneOf?: string[], // And on entities that have one of these componentsStrings
@@ -34,7 +29,8 @@ export const engine = (
     systems: System[],
     deltaTime: number
 ): Entity[] => {
-    let entities: Entity[] = allEntities.filter(e => e.components.size > 0)
+    let entities: Entity[] = allEntities
+    console.log(entities.length)
     systems.forEach(s => {
         const [toProcess, others] = _.partition(entities, e => {
             const all = (s.allOf) ? allOf(e, Array.from(s.allOf)) : true
@@ -44,6 +40,6 @@ export const engine = (
         })
         entities = s.execute(toProcess, deltaTime).concat(others)
     })
-    return entities
+    return entities.filter(e => e.components.size > 0)
 }
 
