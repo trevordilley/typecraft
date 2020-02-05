@@ -469,7 +469,7 @@ export const TypingScene = observer(() => {
                     </h3>
                 </div>
                 <div>
-                    <ul>
+                    <ul style={{listStyleType: "none"}}>
                         <li>Space changes lane</li>
                         <li>Escape pauses game</li>
                         <li>Backtick ( ` ) sets debug mode </li>
@@ -479,7 +479,7 @@ export const TypingScene = observer(() => {
                     <h2>Current Streak: {typingStore.currentStreak}</h2>
                 </div>
                 {debugStore.debugUiEnabled && <div>
-                    <ul>
+                    <ul style={{listStyleType: "none"}}>
                         <li>Entity Count: {entityStore.entities.length}</li>
                         <li>Last Key: {debugStore.debugLastKeyPressed}</li>
                         <li>Paused: {timeStore.paused}</li>
@@ -507,19 +507,26 @@ const DebugEntity: React.FC<{
         Partial<HealthComponent>
 }> = ({entity}) => {
     const [isVisible, setIsVisible] = useState(false)
+    const x = entity.x ?? 0
+    const y = entity.y ?? 0
     return (
         <div
             onMouseEnter={() => setIsVisible(true)}
             onMouseLeave={() => setIsVisible(false)}
             style={{
                 position: "absolute",
-                width: 200,
-                color: "white",
-                left: entity.x ?? 0,
-                top: entity.y ?? 0,
-                opacity: (isVisible) ? 1 : 0
+                color: "#232323",
+                left: x ,
+                top: y ,
+                opacity: (isVisible) ? 0.85 : 0,
+                backgroundColor: "#ededed",
+                padding: 8,
+                border: "2px solid #44f",
+                borderRadius: 2,
             }}>
-            <ul>
+            <ul style={{
+                listStyleType: "none",
+            }}>
                 <li>components: {Array.from(entity.components).join(",")}</li>
                 <li>(x,y): {entity.x!.toFixed(1)}, {entity.y!.toFixed(1)}</li>
                 {entity.destination &&
