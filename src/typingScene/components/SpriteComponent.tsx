@@ -1,8 +1,8 @@
 import * as Phaser from "phaser"
-import {Entity} from "../../ECS/ECS"
 import {Assets} from "../TypingScene"
 import {sceneStore} from "../../SceneStore"
 import {PositionComponent} from "./PositionComponent"
+import {Entity} from "@trevordilley/ecs"
 
 export const SpriteComponentKind = "sprite"
 

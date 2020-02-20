@@ -1,6 +1,5 @@
 import React, {useEffect, useState} from "react"
 import {BASE_CONFIG} from "../App"
-import {Game} from "../libraries/Game/Game"
 import {observer} from "mobx-react-lite"
 import {typingStore} from "./typing/TypingStore"
 import {ActiveWord} from "./activeWord/ActiveWord"
@@ -11,7 +10,6 @@ import {Dwarf} from "./entities/minions/Dwarf"
 import {Builder} from "./entities/minions/Builder"
 import {Witch} from "./entities/minions/Witch"
 import {Gladiator} from "./entities/minions/Gladiator"
-import {engine, Entity} from "../ECS/ECS"
 import {AnimationName, animName, SpriteComponent, SpriteComponentKind} from "./components/SpriteComponent"
 import {Tower} from "./entities/towers/Tower"
 import {MovementComponent, MovementComponentKind} from "./components/MovementComponent"
@@ -26,6 +24,8 @@ import {CombatantComponent, CombatantComponentKind} from "./components/Combatant
 import {DeathComponent, DeathComponentKind, DeathState, dying} from "./components/DeathComponent"
 import {randomInt} from "../Util"
 import {spawn} from "./components/SpawnedComponent"
+import Game from "reactified-phaser/Game"
+import {engine, Entity} from "@trevordilley/ecs"
 
 export enum Assets {
     Tower = "tower",
@@ -449,6 +449,7 @@ export const TypingScene = observer(() => {
             }
         }
     }
+
 
 
     return (

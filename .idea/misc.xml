@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ElmWorkspace">
-    <elmProjects />
-    <settings elmCompilerPath="" elmFormatPath="" elmTestPath="" isElmFormatOnSaveEnabled="false" />
-  </component>
   <component name="HaskellBuildOptions">
     <ghcPath>/usr/local/bin/ghc</ghcPath>
     <cabalPath>/usr/local/bin/cabal</cabalPath>

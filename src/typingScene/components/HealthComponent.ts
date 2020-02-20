@@ -1,4 +1,4 @@
-import {Entity} from "../../ECS/ECS"
+import {Entity} from "@trevordilley/ecs"
 
 export const HealthComponentKind = "healthy"
 export interface HealthComponent  {

@@ -1,8 +1,8 @@
-import {Entity} from "../../../ECS/ECS"
 import {DEFAULT_SPEED, Minion} from "./Minion"
 import {Assets} from "../../TypingScene"
 import {AnimationName} from "../../components/SpriteComponent"
 import {Player} from "../../players/PlayerStore"
+import {Entity} from "@trevordilley/ecs"
 
 const defaultHitPoints = 100
 const defaultSpeed = DEFAULT_SPEED

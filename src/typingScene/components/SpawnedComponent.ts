@@ -1,7 +1,7 @@
-import {Entity} from "../../ECS/ECS"
 import {Lane, SpawnDirection, SpawnPoint} from "../players/PlayerStore"
 import {randomInt} from "../../Util"
 import {MovementComponent} from "./MovementComponent"
+import {Entity} from "@trevordilley/ecs"
 
 export const SpawnedComponentKind = "spawned"
 const spawnOffset = 100

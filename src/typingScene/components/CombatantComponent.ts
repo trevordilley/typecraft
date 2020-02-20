@@ -1,6 +1,6 @@
-import {Entity} from "../../ECS/ECS"
 import {Player} from "../players/PlayerStore"
 import {SpriteComponent} from "./SpriteComponent"
+import {Entity} from "@trevordilley/ecs"
 
 export interface Attack {
     maxCooldown: number,

@@ -1,5 +1,5 @@
-import {Entity} from "../ECS/ECS"
 import {observable} from "mobx"
+import {Entity} from "@trevordilley/ecs"
 class EntityStore {
     @observable
     entities: Entity[] = []

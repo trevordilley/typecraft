@@ -1,4 +1,3 @@
-import {entity, Entity} from "../../../ECS/ECS"
 import {healthy} from "../../components/HealthComponent"
 import {AnimData, sprited} from "../../components/SpriteComponent"
 import {moves} from "../../components/MovementComponent"
@@ -6,6 +5,7 @@ import {positioned} from "../../components/PositionComponent"
 import {Assets} from "../../TypingScene"
 import {combatant} from "../../components/CombatantComponent"
 import {Player} from "../../players/PlayerStore"
+import {entity, Entity} from "@trevordilley/ecs"
 
 // speed in pixels
 // deltaT at 60 FPS ~= 16ms
