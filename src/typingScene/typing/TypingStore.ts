@@ -1,5 +1,24 @@
 import {action, computed, observable} from "mobx"
 
+
+export const wordLibrary: string[] = [
+    "Clojure",
+    "Elm",
+    "Erlang",
+    "Haskell",
+    "Elixer",
+    "Ocaml",
+    "Kotlin",
+    "ReasonML",
+    "Scala",
+    "Eta",
+    "Idris",
+    "Racket",
+    "Scheme",
+    "APL",
+]
+
+
 class TypingStore {
 
 
@@ -10,22 +29,7 @@ class TypingStore {
     targetWordIdx: number = 0
 
     @observable
-    wordLibrary: string[] = [
-        "Clojure",
-        "Elm",
-        "Erlang",
-        "Haskell",
-        "Elixer",
-        "Ocaml",
-        "Kotlin",
-        "ReasonML",
-        "Scala",
-        "Eta",
-        "Idris",
-        "Racket",
-        "Scheme",
-        "APL",
-    ]
+    wordLibrary: string[] = wordLibrary
 
     @observable
     currentWord: string = ""
