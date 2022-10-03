@@ -26,6 +26,7 @@ import {randomInt} from "../Util"
 import {spawn} from "./components/SpawnedComponent"
 import Game from "reactified-phaser/Game"
 import {engine, Entity} from "@trevordilley/ecs"
+import {session} from "./rules/rules";
 
 export enum Assets {
     Tower = "tower",
@@ -355,7 +356,23 @@ export const TypingScene = observer(() => {
 
                 sceneStore.scene!.input.keyboard.on("keydown", (e: { key?: string }) => {
                         debugStore.debugLastKeyPressed = e.key
-                        if (e.key === "`") {
+
+                    if(e.key) {
+                        session.insert({
+                            Input: {
+                                debugPressed: e.key === "`",
+                                spacePressed: e.key === " ",
+                                escapePressed: e.key === "Escape",
+                                leftPressed: cursors.left.isDown,
+                                rightPressed: cursors.right.isDown,
+                                upPressed: cursors.up.isDown,
+                                downPressed: cursors.down.isDown,
+                                shiftPressed: e.key === "Shift",
+                            }
+                        })
+                    }
+
+                    if (e.key === "`") {
                             debugStore.debugUiEnabled = !debugStore.debugUiEnabled
                             return
                         }
@@ -368,6 +385,11 @@ export const TypingScene = observer(() => {
                             return
                         }
                         if (e.key === "Escape") {
+                            session.insert({
+                                Input: {
+                                    pauseKeyPressed: true
+                                }
+                            })
                             timeStore.togglePause()
                             return
                         }
@@ -431,7 +453,15 @@ export const TypingScene = observer(() => {
                 if (cursors.right?.isDown) {
                     sceneStore.scene!.cameras.main.scrollX += 10
                 }
-
+                session.insert({
+                    Time: { deltaTime: dt},
+                    Input: {
+                        upPressed: cursors.up.isDown,
+                        downPressed: cursors.down.isDown,
+                        leftPressed: cursors.left.isDown,
+                        rightPressed: cursors.right.isDown
+                    }
+                })
                 const deltaTime = dt * timeStore.dilation
                 const entities = entityStore.entities
                 entityStore.entities = engine(
@@ -446,6 +476,7 @@ export const TypingScene = observer(() => {
                     ],
                     deltaTime
                 )
+                session.fire()
             }
         }
     }
