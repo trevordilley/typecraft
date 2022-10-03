@@ -335,8 +335,8 @@ export const TypingScene = observer(() => {
             create: function () {
                 const map = sceneStore.scene!.make.tilemap({key: outdoorMap.dataName})
                 const tiles = map.addTilesetImage("outdoor-tileset", outdoorMap.name)
-                map.createStaticLayer(0, tiles, 0, 0)
-                map.createStaticLayer(1, tiles, 0, 0)
+                map.createLayer(0, tiles, 0, 0)
+                map.createLayer(1, tiles, 0, 0)
 
                 sceneStore.scene!.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels)
 
@@ -453,7 +453,7 @@ export const TypingScene = observer(() => {
 
 
     return (
-        <Game config={TypingSceneConfig}>
+        <Game config={TypingSceneConfig as any}>
             <div>
                 <ActiveWord
                     targetWord={typingStore.targetWord}
