@@ -17,3 +17,10 @@ export const dying = (entity: Entity, deathState= DeathState.NEW_DYING): Entity 
         deathState: deathState,
     }
 }
+
+export const dyingT = <T>(entity: T, deathState= DeathState.NEW_DYING): T & DeathComponent  => {
+    return {
+        ...entity,
+        deathState: deathState,
+    }
+}

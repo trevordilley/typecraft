@@ -1,4 +1,3 @@
-import {Entity} from "@trevordilley/ecs"
 
 export const PositionComponentKind = "positioned"
 
@@ -7,11 +6,11 @@ export interface PositionComponent  {
     y: number
 }
 
-export const positioned = (entity: Entity, x: number, y: number): Entity & PositionComponent  => {
+export const positioned = <T>(entity: T, x: number, y: number): T & PositionComponent  => {
     return {
         ...entity,
-        components: entity.components.add(PositionComponentKind),
         x,
         y
     }
 }
+

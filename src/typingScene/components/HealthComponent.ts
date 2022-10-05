@@ -16,3 +16,11 @@ export const healthy = (entity: Entity, hitPoints: number, maxHitPoints?: number
         damages
     }
 }
+export const healthyT = <T>(entity: T, hitPoints: number, maxHitPoints?: number, damages: number[] = []): T & HealthComponent  => {
+    return {
+        ...entity,
+        hitPoints,
+        maxHitPoints: maxHitPoints ?? hitPoints,
+        damages
+    }
+}

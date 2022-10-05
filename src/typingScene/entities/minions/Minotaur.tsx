@@ -12,7 +12,7 @@ export const Minotaur = (
     commander: Player,
     hitPoints?: number,
     speed?: number
-): Entity =>
+) =>
     Minion(
         hitPoints ?? defaultHitPoints,
         x, y,

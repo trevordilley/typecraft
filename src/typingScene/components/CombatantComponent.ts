@@ -28,3 +28,14 @@ export const combatant = (entity: Entity & Partial<SpriteComponent>, attack: Att
     }
     return e
 }
+export const combatantT = <T>(entity: T & Partial<SpriteComponent>, attack: Attack, commander: Player): T & CombatantComponent => {
+    const e = {
+        ...entity,
+        commander,
+        attack
+    }
+    if (e.sprite) {
+        e.sprite!.tint = commander.tint
+    }
+    return e
+}

@@ -1,12 +1,11 @@
 import {Lane, SpawnDirection, SpawnPoint} from "../players/PlayerStore"
 import {randomInt} from "../../Util"
 import {MovementComponent} from "./MovementComponent"
-import {Entity} from "@trevordilley/ecs"
 
 export const SpawnedComponentKind = "spawned"
 const spawnOffset = 100
 const spawnRadius = 50
-export const spawn = (entity: Entity & Partial<MovementComponent>, lane: Lane ): Entity & SpawnPoint & Partial<MovementComponent>=>
+export const spawn = <T>(entity: T, lane: Lane ): T & SpawnPoint & Pick<MovementComponent, "destination" | "finalDestination">=>
     ({
         ...entity,
         x: lane.origin.x + ((lane.origin.spawnDirection === SpawnDirection.LEFT) ? -spawnOffset : spawnOffset),
@@ -14,5 +13,4 @@ export const spawn = (entity: Entity & Partial<MovementComponent>, lane: Lane ):
         spawnDirection: lane.origin.spawnDirection,
         destination: lane.destination,
         finalDestination: lane.destination,
-        components: entity.components.add(SpawnedComponentKind),
     })

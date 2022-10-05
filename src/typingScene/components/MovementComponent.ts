@@ -18,3 +18,12 @@ export const moves = (entity: Entity, speed: number, destination?: { x: number, 
         finalDestination: finalDestination ?? destination
     }
 }
+
+export const movesT = <T>(entity: T, speed: number, destination?: { x: number, y: number }, finalDestination?: { x: number, y: number}): T & MovementComponent => {
+    return {
+        ...entity,
+        speed,
+        destination,
+        finalDestination: finalDestination ?? destination
+    }
+}

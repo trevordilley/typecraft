@@ -59,3 +59,31 @@ export const sprited = (entity: Entity & Partial<PositionComponent>,
         asset
     }
 }
+export const spritedT = <T>(entity: T & Pick<PositionComponent, "x" | "y">,
+                        asset: Assets,
+                        animData?: AnimData[]
+): T & SpriteComponent => {
+
+    const sprite = sceneStore.scene!.add.sprite(entity.x ?? 0, entity.y ?? 0, asset)
+
+    animData?.forEach(data => {
+        const animKey = animName(data.name, asset)
+        if(!sceneStore.scene!.anims.exists(animKey)) {
+            sceneStore.scene!.anims.create({
+                key: animName(data.name, asset),
+                frames: sceneStore.scene!.anims.generateFrameNumbers(asset, {
+                    start: data.start,
+                    end: data.end
+                }),
+                frameRate: data.frameRate,
+                repeat: data.repeat ?? -1
+            })
+        }
+    })
+
+    return {
+        ...entity,
+        sprite,
+        asset
+    }
+}

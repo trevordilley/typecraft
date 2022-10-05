@@ -27,6 +27,7 @@ import {spawn} from "./components/SpawnedComponent"
 import Game from "reactified-phaser/Game"
 import {engine, Entity} from "@trevordilley/ecs"
 import {session} from "./rules/rules";
+import {entity} from "./entities/minions/Entity";
 
 export enum Assets {
     Tower = "tower",
@@ -52,56 +53,14 @@ const outdoorMap = {
 
 let cursors: Phaser.Types.Input.Keyboard.CursorKeys
 
-const spawnSquad = (player: Player) => {
-    const lane = getLane(player)
-    add(spawn(Adventurer(70, 100, player), lane))
-    add(spawn(Witch(100, 120, player), lane))
-    add(spawn(Builder(50, 80, player), lane))
-    add(spawn(Gladiator(90, 90, player), lane))
-    add(spawn(Dwarf(90, 70, player), lane))
-
-}
-const getLane = (player: Player): Lane =>
-    (player.currentLanePosition === LanePosition.TOP) ?
-        player.topLane :
-        player.bottomLane
 
 // Dummy AI
 setInterval(() => {
     if (playerStore.player2) {
-        const shouldLaneSwitch = randomInt(100) > 80
-        if (shouldLaneSwitch) {
-            if (playerStore.player2.currentLanePosition === LanePosition.TOP) {
-                playerStore.player2.currentLanePosition = LanePosition.BOTTOM
-            } else {
-                playerStore.player2.currentLanePosition = LanePosition.TOP
-            }
-        }
-        spawnSquad(playerStore.player2)
+        session.insert({Opponent: {spawnSquad: true, switchLanes:randomInt(100) > 80  }})
     }
-
 }, 3000)
 
-const onTyping = (character: string) => {
-
-    const {nextWord, points, currentStreak, currentWord} = typed({
-        currentStreak: typingStore.currentStreak,
-        currentWord: typingStore.currentWord,
-        character,
-        nextWord: false,
-        targetWord: typingStore.targetWord,
-        points: typingStore.points
-    })
-    typingStore.currentStreak = currentStreak
-    typingStore.points = points
-    if (nextWord) {
-        typingStore.nextWord()
-        spawnSquad(playerStore.player1!)
-        typingStore.currentWord = ""
-    } else {
-        typingStore.currentWord = currentWord
-    }
-}
 
 
 export const TypingScene = observer(() => {
@@ -117,17 +76,6 @@ export const TypingScene = observer(() => {
      Systems
      ***********************/
 
-    // Position System (make sprites respect the x,y on the entity itself)
-    const positionSystem = {
-            allOf: [SpriteComponentKind, PositionComponentKind],
-            execute: (entities: (Partial<SpriteComponent> & Partial<PositionComponent> & Entity)[]) => {
-                return entities.map(e => {
-                    e.sprite!.x = e.x!
-                    e.sprite!.y = e.y!
-                    return e
-                })
-            }
-        }
 
 
     // Movement System
@@ -140,11 +88,6 @@ export const TypingScene = observer(() => {
             Partial<SpriteComponent> &
             Entity)[], dt: number) => {
             return entities.map(e => {
-                if (!e.destination) {
-                    e.sprite?.anims.play(animName(AnimationName.IDLE, e.asset!), true)
-                    return e
-                }
-
                 const p = new Phaser.Math.Vector2(e.x!, e.y!)
                 const d = new Phaser.Math.Vector2(e.destination!.x, e.destination!.y)
 
@@ -355,104 +298,48 @@ export const TypingScene = observer(() => {
                 cursors = sceneStore.scene!.input.keyboard.createCursorKeys()
 
                 sceneStore.scene!.input.keyboard.on("keydown", (e: { key?: string }) => {
-                        debugStore.debugLastKeyPressed = e.key
-
-                    if(e.key) {
-                        session.insert({
-                            Input: {
-                                debugPressed: e.key === "`",
-                                spacePressed: e.key === " ",
-                                escapePressed: e.key === "Escape",
-                                leftPressed: cursors.left.isDown,
-                                rightPressed: cursors.right.isDown,
-                                upPressed: cursors.up.isDown,
-                                downPressed: cursors.down.isDown,
-                                shiftPressed: e.key === "Shift",
-                            }
-                        })
-                    }
-
-                    if (e.key === "`") {
-                            debugStore.debugUiEnabled = !debugStore.debugUiEnabled
-                            return
-                        }
-                        if (e.key === " ") {
-                            if (playerStore.player1?.currentLanePosition === LanePosition.TOP) {
-                                playerStore.player1!.currentLanePosition = LanePosition.BOTTOM
-                            } else {
-                                playerStore.player1!.currentLanePosition = LanePosition.TOP
-                            }
-                            return
-                        }
-                        if (e.key === "Escape") {
-                            session.insert({
-                                Input: {
-                                    pauseKeyPressed: true
-                                }
-                            })
-                            timeStore.togglePause()
-                            return
-                        }
-                        if (cursors.up?.isDown || cursors.down?.isDown || cursors.right?.isDown || cursors.left?.isDown || !e.key || e.key === "Shift")
-                            return
-                        else if (e.key) {
-                            onTyping(e.key)
-                        }
-                    }
+                      session.insert({
+                          Debug: {
+                              debugLastKeyPressed: e.key
+                          }
+                      })
+                      if (e.key) {
+                          session.insert({
+                              Input: {
+                                  debugPressed: e.key === "`",
+                                  spacePressed: e.key === " ",
+                                  escapePressed: e.key === "Escape",
+                                  leftPressed: cursors.left.isDown,
+                                  rightPressed: cursors.right.isDown,
+                                  upPressed: cursors.up.isDown,
+                                  downPressed: cursors.down.isDown,
+                                  shiftPressed: e.key === "Shift",
+                                  keyPressed: e.key
+                              }
+                          })
+                      }
+                  }
                 )
-
-                const tlTower = add(Tower(100, 100, SpawnDirection.RIGHT))
-                const blTower = add(Tower(100, 400, SpawnDirection.RIGHT))
-
-                const trTower = add(Tower(1100, 100, SpawnDirection.LEFT))
-                const brTower = add(Tower(1100, 400, SpawnDirection.LEFT))
-                playerStore.player1 = {
-                    topLane: {
-                        origin: tlTower as unknown as SpawnPoint,
-                        destination: trTower as unknown as SpawnPoint
-                    },
-                    bottomLane: {
-                        origin: blTower as unknown as SpawnPoint,
-                        destination: brTower as unknown as SpawnPoint
-                    },
-                    currentLanePosition: LanePosition.TOP,
-                    tint: 0xaaffaa,
-                    towerPoints: 0
-                }
-                playerStore.player2 = {
-                    topLane: {
-                        origin: trTower as unknown as SpawnPoint,
-                        destination: tlTower as unknown as SpawnPoint
-                    },
-                    bottomLane: {
-                        origin: brTower as unknown as SpawnPoint,
-                        destination: blTower as unknown as SpawnPoint
-                    },
-                    currentLanePosition: LanePosition.TOP,
-                    tint: 0xffaaaa,
-                    towerPoints: 0
-                }
-
             },
 
             /***********************
              UPDATE
              ***********************/
             update: function (timeStep: number, dt: number) {
-                // Use scrollX/Y to move camera around
-                // the map.
-                if (cursors.up?.isDown) {
-                    sceneStore.scene!.cameras.main.scrollY -= 10
-                }
-                if (cursors.down?.isDown) {
-                    sceneStore.scene!.cameras.main.scrollY += 10
-                }
-                if (cursors.left?.isDown) {
-                    sceneStore.scene!.cameras.main.scrollX -= 10
-                }
-                if (cursors.right?.isDown) {
-                    sceneStore.scene!.cameras.main.scrollX += 10
-                }
+                // // Use scrollX/Y to move camera around
+                // // the map.
+                // if (cursors.up?.isDown) {
+                //     sceneStore.scene!.cameras.main.scrollY -= 10
+                // }
+                // if (cursors.down?.isDown) {
+                //     sceneStore.scene!.cameras.main.scrollY += 10
+                // }
+                // if (cursors.left?.isDown) {
+                //     sceneStore.scene!.cameras.main.scrollX -= 10
+                // }
+                // if (cursors.right?.isDown) {
+                //     sceneStore.scene!.cameras.main.scrollX += 10
+                // }
                 session.insert({
                     Time: { deltaTime: dt},
                     Input: {
