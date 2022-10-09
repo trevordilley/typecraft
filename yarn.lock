@@ -1241,20 +1241,20 @@
   resolved "https://registry.yarnpkg.com/@csstools/normalize.css/-/normalize.css-10.1.0.tgz#f0950bba18819512d42f7197e56c518aa491cf18"
   integrity sha512-ij4wRiunFfaJxjB0BdrYHIH8FxBJpOwNPhhAcunlmPdXudL1WQV1qoP9un6JsEBAgQH+7UXyyjh0g7jTxXK6tg==
 
-"@edict/core@^0.1.0-beta.1":
-  version "0.1.0-beta.1"
-  resolved "https://registry.yarnpkg.com/@edict/core/-/core-0.1.0-beta.1.tgz#c8f8f7479ff0fdc3c666a5685de7af2355128da8"
-  integrity sha512-aH4qHkg+sWiEl1+SXTDbfnLTQTCaaLhX5cLu6oF3lUkcGl5pZkN9XBlYNsMzYKgHV09jhEEU8uodLH5CQYEWdA==
+"@edict/core@^0.1.0-beta.2":
+  version "0.1.0-beta.2"
+  resolved "https://registry.yarnpkg.com/@edict/core/-/core-0.1.0-beta.2.tgz#dd8063ad4ffe8e2c3ea30d8f1efe879b17d4c9d5"
+  integrity sha512-BA1hFw3vWpdYw830BuH7zMNDDcxZY2iDHUWFOL0nKFWImiEmXtivhspCnHuEbSgchQW57c51vcTI7Qx/9+A83A==
 
-"@edict/rete@^0.1.0-beta.1":
-  version "0.1.0-beta.1"
-  resolved "https://registry.yarnpkg.com/@edict/rete/-/rete-0.1.0-beta.1.tgz#e75310038f554b3753ea239886726cca9a4efc36"
-  integrity sha512-JEpb0vCTyq0YOhDexc4a7eEBkiyx80wU3svKAUeD4bunzSPZjJ/ITgJRSKMiZuKqWMvVr1ubOEcAdalbS9EoVw==
+"@edict/rete@^0.1.0-beta.2":
+  version "0.1.0-beta.2"
+  resolved "https://registry.yarnpkg.com/@edict/rete/-/rete-0.1.0-beta.2.tgz#657a5cf3e5b360abe2568336c703f99ee1244fcb"
+  integrity sha512-fZaQaS8qe9SJ1P2GAGJENZZ+8texINplGip6tPunkN+Lqr7pqSr1sfS3XLs2nl44HSLPxmllyoiE5sKd6dVZOg==
 
-"@edict/types@^0.1.0-beta.1":
-  version "0.1.0-beta.1"
-  resolved "https://registry.yarnpkg.com/@edict/types/-/types-0.1.0-beta.1.tgz#f16f4d232a0e078b84d2dd9d902814c50a942c38"
-  integrity sha512-HV+spusCN3JFicn8IuG1VKPI7vpcaA6ybH3pvJjV2UH0PM/SkFGNDloIwRd39juvFnq9Fy2VY1JaIbTw4Gh5Cg==
+"@edict/types@^0.1.0-beta.2":
+  version "0.1.0-beta.2"
+  resolved "https://registry.yarnpkg.com/@edict/types/-/types-0.1.0-beta.2.tgz#4542e4006c1e96c87b445a1262512cdb9b74e88d"
+  integrity sha512-8Ak/Sw3KT8HT5e25GfRjCaOp+AxcztrHKokor/IQ28SV3e9DtcV2PP3Kx6CxREK1EJ/Khry1/v4JE1YXrRdNQw==
 
 "@hapi/address@2.x.x":
   version "2.1.4"

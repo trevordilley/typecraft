@@ -79,84 +79,84 @@ export const TypingScene = observer(() => {
 
 
     // Movement System
-    const movementSystem = {
-        allOf: [PositionComponentKind, MovementComponentKind],
-        noneOf: [DeathComponentKind],
-        execute: (entities: (
-            Partial<PositionComponent> &
-            Partial<MovementComponent> &
-            Partial<SpriteComponent> &
-            Entity)[], dt: number) => {
-            return entities.map(e => {
-                const p = new Phaser.Math.Vector2(e.x!, e.y!)
-                const d = new Phaser.Math.Vector2(e.destination!.x, e.destination!.y)
-
-                // They have reached their destination
-                if (d.distance(p) < 5) {
-                    return {...e, destination: undefined, finalDestination: undefined}
-                }
-
-                const dir = d.subtract(p).normalize().angle()
-                const deg = dir * (180 / Math.PI)
-
-                // Change sprite orientation, assuming
-                // the sprite is always facing to the "right"
-                if (e.sprite) {
-                    e.sprite?.anims.play(animName(AnimationName.MOVING, e.asset!), true)
-                    if (deg >= 90 && deg <= 270) {
-                        e.sprite.setFlipX(true)
-                    } else {
-                        e.sprite.setFlipX(false)
-                    }
-                }
-
-                const x = dt * Math.cos(dir) * e.speed! + e.x!
-                const y = dt * Math.sin(dir) * e.speed! + e.y!
-                return {...e, x, y}
-            })
-        }
-    }
-
-    const healthSystem = {
-        allOf: [HealthComponentKind],
-        noneOf: [DeathComponentKind],
-        execute: (entities: (Partial<HealthComponent> & Entity)[]) => {
-            return entities.map(entity => {
-                    const damage = entity.damages!.reduce((c, d) => c + d, 0)
-                    entity.damages = []
-                    entity.hitPoints! -= damage
-                    return (entity.hitPoints! <= 0) ? dying(entity) : entity
-                }
-            )
-        }
-    }
-
-    const deathSystem = {
-        allOf: [DeathComponentKind],
-        execute: (entities: (Partial<SpriteComponent> & Partial<DeathComponent> & Entity)[]) => {
-
-            return entities.map(entity => {
-                if (entity.sprite) {
-                    if (entity.deathState === DeathState.NEW_DYING) {
-                        entity.deathState = DeathState.DYING
-                        entity.sprite?.anims.play(animName(AnimationName.DEATH, entity.asset!), true)
-                    } else if (entity.deathState === DeathState.DYING) {
-                        // getProgress() doesn't seem to sync up with the animations quite correctly
-                        // or I have empty frames in the death frames?
-                        if (entity.sprite?.anims.getProgress() === 1) {
-                            entity.deathState = DeathState.DEAD
-                        }
-                    } else if (entity.deathState === DeathState.DEAD) {
-                        entity.sprite.destroy()
-                        entity.components.clear()
-                    }
-                } else {
-                    entity.deathState = DeathState.DEAD
-                }
-                return entity
-            })
-        }
-    }
+    // const movementSystem = {
+    //     allOf: [PositionComponentKind, MovementComponentKind],
+    //     noneOf: [DeathComponentKind],
+    //     execute: (entities: (
+    //         Partial<PositionComponent> &
+    //         Partial<MovementComponent> &
+    //         Partial<SpriteComponent> &
+    //         Entity)[], dt: number) => {
+    //         return entities.map(e => {
+    //             const p = new Phaser.Math.Vector2(e.x!, e.y!)
+    //             const d = new Phaser.Math.Vector2(e.destination!.x, e.destination!.y)
+    //
+    //             // They have reached their destination
+    //             if (d.distance(p) < 5) {
+    //                 return {...e, destination: undefined, finalDestination: undefined}
+    //             }
+    //
+    //             const dir = d.subtract(p).normalize().angle()
+    //             const deg = dir * (180 / Math.PI)
+    //
+    //             // Change sprite orientation, assuming
+    //             // the sprite is always facing to the "right"
+    //             if (e.sprite) {
+    //                 e.sprite?.anims.play(animName(AnimationName.MOVING, e.asset!), true)
+    //                 if (deg >= 90 && deg <= 270) {
+    //                     e.sprite.setFlipX(true)
+    //                 } else {
+    //                     e.sprite.setFlipX(false)
+    //                 }
+    //             }
+    //
+    //             const x = dt * Math.cos(dir) * e.speed! + e.x!
+    //             const y = dt * Math.sin(dir) * e.speed! + e.y!
+    //             return {...e, x, y}
+    //         })
+    //     }
+    // }
+    //
+    // const healthSystem = {
+    //     allOf: [HealthComponentKind],
+    //     noneOf: [DeathComponentKind],
+    //     execute: (entities: (Partial<HealthComponent> & Entity)[]) => {
+    //         return entities.map(entity => {
+    //                 const damage = entity.damages!.reduce((c, d) => c + d, 0)
+    //                 entity.damages = []
+    //                 entity.hitPoints! -= damage
+    //                 return (entity.hitPoints! <= 0) ? dying(entity) : entity
+    //             }
+    //         )
+    //     }
+    // }
+    //
+    // const deathSystem = {
+    //     allOf: [DeathComponentKind],
+    //     execute: (entities: (Partial<SpriteComponent> & Partial<DeathComponent> & Entity)[]) => {
+    //
+    //         return entities.map(entity => {
+    //             if (entity.sprite) {
+    //                 if (entity.deathState === DeathState.NEW_DYING) {
+    //                     entity.deathState = DeathState.DYING
+    //                     entity.sprite?.anims.play(animName(AnimationName.DEATH, entity.asset!), true)
+    //                 } else if (entity.deathState === DeathState.DYING) {
+    //                     // getProgress() doesn't seem to sync up with the animations quite correctly
+    //                     // or I have empty frames in the death frames?
+    //                     if (entity.sprite?.anims.getProgress() === 1) {
+    //                         entity.deathState = DeathState.DEAD
+    //                     }
+    //                 } else if (entity.deathState === DeathState.DEAD) {
+    //                     entity.sprite.destroy()
+    //                     entity.components.clear()
+    //                 }
+    //             } else {
+    //                 entity.deathState = DeathState.DEAD
+    //             }
+    //             return entity
+    //         })
+    //     }
+    // }
 
     // Likely a system that will need all kinds of optimizations
     // May want to introduce another system which breaks up the positions
@@ -167,62 +167,62 @@ export const TypingScene = observer(() => {
     //
     // UPDATE: Oh yeah, this system tanks perf. Game can only handle around
     // 100 entities because of this big dummy.
-    const attackSystem = {
-        allOf: [CombatantComponentKind, PositionComponentKind, HealthComponentKind, MovementComponentKind],
-        noneOf: [DeathComponentKind],
-        execute: (
-            entities: (Partial<MovementComponent> & Partial<CombatantComponent> & Partial<PositionComponent> & Partial<HealthComponent> & Entity)[], dt: number) => {
-
-            // Just do it the dummy simple way.
-            entities.forEach(e => {
-                if (e.attack!.curCooldown > 0) {
-                    e.attack!.curCooldown -= dt
-                    return e
-                }
-
-                entities.forEach(o => {
-                    if (e.commander !== o.commander) {
-                        const attack = e.attack!
-                        const ePos = new Phaser.Math.Vector2(e.x!, e.y!)
-                        const oPos = new Phaser.Math.Vector2(o.x!, o.y!)
-                        const dist = oPos.distance(ePos)
-                        if (dist <= attack!.range) {
-                            e.destination = undefined
-                            e.attack!.curCooldown = attack.maxCooldown
-                            const damage = randomInt(attack.damage)
-                            o.damages!.push(damage)
-                            return e
-                        } else if (!e.destination) {
-                            console.log("Moving along now?")
-                            console.log(e.finalDestination)
-                            e.destination = e.finalDestination
-                        }
-                    }
-                })
-            })
-            return entities
-        }
-    }
-
-    const towerClaimPointsSystem = {
-        allOf: [MovementComponentKind, CombatantComponentKind],
-        noneOf: [DeathComponentKind],
-        execute: (
-            entities: (Partial<MovementComponent> & Partial<CombatantComponent> & Partial<PositionComponent> & Entity)[]) => {
-            return entities.map(e => {
-                if (e.finalDestination) {
-                    const p = new Phaser.Math.Vector2(e.x, e.y)
-                    const d = new Phaser.Math.Vector2(e.finalDestination.x, e.finalDestination.y)
-                    const dist = p.distance(d)
-                    if (dist < 10) {
-                        e.commander!.towerPoints += 1
-                        return dying(e)
-                    }
-                }
-                return e
-            })
-        }
-    }
+    // const attackSystem = {
+    //     allOf: [CombatantComponentKind, PositionComponentKind, HealthComponentKind, MovementComponentKind],
+    //     noneOf: [DeathComponentKind],
+    //     execute: (
+    //         entities: (Partial<MovementComponent> & Partial<CombatantComponent> & Partial<PositionComponent> & Partial<HealthComponent> & Entity)[], dt: number) => {
+    //
+    //         // Just do it the dummy simple way.
+    //         entities.forEach(e => {
+    //             // if (e.attack!.curCooldown > 0) {
+    //             //     e.attack!.curCooldown -= dt
+    //             //     return e
+    //             // }
+    //
+    //             entities.forEach(o => {
+    //                 if (e.commander !== o.commander) {
+    //                     const attack = e.attack!
+    //                     const ePos = new Phaser.Math.Vector2(e.x!, e.y!)
+    //                     const oPos = new Phaser.Math.Vector2(o.x!, o.y!)
+    //                     const dist = oPos.distance(ePos)
+    //                     if (dist <= attack!.range) {
+    //                         e.destination = undefined
+    //                         e.attack!.curCooldown = attack.maxCooldown
+    //                         const damage = randomInt(attack.damage)
+    //                         o.damages!.push(damage)
+    //                         return e
+    //                     } else if (!e.destination) {
+    //                         console.log("Moving along now?")
+    //                         console.log(e.finalDestination)
+    //                         e.destination = e.finalDestination
+    //                     }
+    //                 }
+    //             })
+    //         })
+    //         return entities
+    //     }
+    // }
+    //
+    // const towerClaimPointsSystem = {
+    //     allOf: [MovementComponentKind, CombatantComponentKind],
+    //     noneOf: [DeathComponentKind],
+    //     execute: (
+    //         entities: (Partial<MovementComponent> & Partial<CombatantComponent> & Partial<PositionComponent> & Entity)[]) => {
+    //         return entities.map(e => {
+    //             if (e.finalDestination) {
+    //                 const p = new Phaser.Math.Vector2(e.x, e.y)
+    //                 const d = new Phaser.Math.Vector2(e.finalDestination.x, e.finalDestination.y)
+    //                 const dist = p.distance(d)
+    //                 if (dist < 10) {
+    //                     e.commander!.towerPoints += 1
+    //                     return dying(e)
+    //                 }
+    //             }
+    //             return e
+    //         })
+    //     }
+    // }
 
     const TypingSceneConfig = {
         ...BASE_CONFIG,
@@ -349,21 +349,21 @@ export const TypingScene = observer(() => {
                         rightPressed: cursors.right.isDown
                     }
                 })
-                const deltaTime = dt * timeStore.dilation
-                const entities = entityStore.entities
-                entityStore.entities = engine(
-                    entities,
-                    [
-                        positionSystem,
-                        movementSystem,
-                        healthSystem,
-                        attackSystem,
-                        towerClaimPointsSystem,
-                        deathSystem
-                    ],
-                    deltaTime
-                )
                 session.fire()
+                // const deltaTime = dt * timeStore.dilation
+                // const entities = entityStore.entities
+                // entityStore.entities = engine(
+                //     entities,
+                //     [
+                //         positionSystem,
+                //         movementSystem,
+                //         healthSystem,
+                //         attackSystem,
+                //         towerClaimPointsSystem,
+                //         deathSystem
+                //     ],
+                //     deltaTime
+                // )
             }
         }
     }

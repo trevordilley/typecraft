@@ -1,4 +1,4 @@
-import {DeathState} from "../components/DeathComponent";
+import {DeathState, dying} from "../components/DeathComponent";
 import {Attack} from "../components/CombatantComponent";
 import {AnimationName, AnimData, animName} from "../components/SpriteComponent";
 import {edict} from "@edict/core";
@@ -14,6 +14,8 @@ import {Builder} from "../entities/minions/Builder";
 import {Gladiator} from "../entities/minions/Gladiator";
 import {Dwarf} from "../entities/minions/Dwarf";
 import {Tower} from "../entities/towers/Tower";
+import advanceTimersToNextTimer = jest.advanceTimersToNextTimer;
+import {randomInt} from "../../Util";
 
 type SceneSchema = {
 }
@@ -56,7 +58,8 @@ type InputSchema = {
 
 type ComponentSchema = {
   x: number,
-  y: number
+  y: number,
+  direction: number,
   commander: Player,
   attack: Attack
   hitPoints: number,
@@ -88,7 +91,7 @@ type Schema = ComponentSchema & TimeSchema & TypingSchema & SceneSchema & InputS
 // Let's take a gradual strategy. Start by migrating input and updating the stores
 // as needed, then integrate into React, then take over the stores.
 export const session = edict<Schema>()
-const { insert, rule} = session
+const { retract, insert, rule} = session
 rule("matching characters increase points, missed characters break streaks", ({currentCharacter, targetWord}) => ({
   Typing: {
     currentWord: {then: false},
@@ -283,6 +286,214 @@ rule("Sprites without a destination are idle animating", ({finalDestination, spr
   when:({$entity: { finalDestination}}) => finalDestination === undefined,
   then: ({$entity: {sprite, asset}}) => {
     sprite.anims.play(animName(AnimationName.IDLE, asset), true)
+  }
+})
+
+rule("Set sprite direction", ({destination, sprite, x, y}) => ({
+  $entity: {
+    destination, sprite, x, y
+  }
+})).enact({
+  then:({$entity: {destination, sprite, id, x, y}}) => {
+    const p = new Phaser.Math.Vector2(x, y)
+    const d = new Phaser.Math.Vector2(destination.x, destination.y)
+
+
+    const dir = d.subtract(p).normalize().angle()
+    const deg = dir * (180 / Math.PI)
+
+    // Change sprite orientation, assuming
+    // the sprite is always facing to the "right"
+      if (deg >= 90 && deg <= 270) {
+        sprite.setFlipX(true)
+      } else {
+        sprite.setFlipX(false)
+      }
+
+    insert({
+      [id]: {
+        direction: dir,
+      }
+    })
+  }
+})
+
+rule("Move entity to destination if attack is on cooldown, stop on arrival", ({direction, deltaTime, speed, attack}) => ({
+  $entity: {
+    direction,
+    speed,
+    destination: {then: false},
+    x: {then: false},
+    y: {then: false},
+    attack,
+  },
+  Time: {
+    deltaTime
+  }
+})).enact({
+  when: ({$entity: { attack}}) => attack.curCooldown <= 0,
+  then: ({$entity: {id, x , y, direction, destination, speed}, Time: {deltaTime}}) => {
+
+    // TODO: I don't know why I used a raw x,y... really need to swap to Phaser.Math.Vectors
+    const p = new Phaser.Math.Vector2(x, y)
+    const d = new Phaser.Math.Vector2(destination.x, destination.y)
+    // They have reached their destination
+    if (d.distance(p) < 5) {
+      insert({
+        [id]: {
+          destination: undefined,
+          finalDestination: undefined
+        }
+      })
+      return
+    }
+
+    insert({
+      [id]: {
+        x: deltaTime * Math.cos(direction) * speed + x,
+        y: deltaTime * Math.sin(direction) * speed + y
+      }
+    })
+  }
+})
+
+rule("Apply damages to health", () => ({
+  $entity: {
+    damages: {then: false},
+      hitPoints: {then: false},
+  }
+})).enact({
+  then: ({$entity: { id, damages, hitPoints}}) => {
+
+    const damage = damages!.reduce((c, d) => c + d, 0)
+    const newHitPoints = hitPoints! -= damage
+
+    insert({
+      [id]: {
+        hitPoints: newHitPoints,
+        damages: [],
+        deathState: (newHitPoints <= 0) ? DeathState.NEW_DYING : undefined
+      }
+    })
+  }
+})
+
+rule("Newly dieing things are dieing",({asset}) => ({
+  $entity: {
+    asset,
+    sprite: {then: false},
+    deathState: {then: false}
+  }
+})).enact({
+  then: ({$entity: {id, sprite, deathState, asset}}) => {
+
+      if (deathState === DeathState.NEW_DYING) {
+        sprite?.anims.play(animName(AnimationName.DEATH, asset), true)
+        insert({
+          [id]: {
+            deathState: DeathState.DYING
+          }
+        })
+      } else if (deathState === DeathState.DYING) {
+        // getProgress() doesn't seem to sync up with the animations quite correctly
+        // or I have empty frames in the death frames?
+        if (sprite?.anims.getProgress() === 1) {
+          insert({
+            [id]: {
+              deathState: DeathState.DEAD
+            }
+          })
+        }
+      } else if (deathState === DeathState.DEAD) {
+        sprite.destroy()
+        retract(id,
+          "x",
+          "y",
+          "direction",
+          "commander",
+          "attack",
+          "hitPoints",
+          "maxHitPoints",
+          "damages",
+          "deathState",
+          "speed",
+          "destination",
+          "finalDestination",
+          "sprite",
+          "asset",
+          "animData",
+        )
+      }
+    return entity
+  }
+})
+
+rule("Cooldown resets over time", ({attack, deltaTime}) => ({
+  $entity: {
+    attack
+  },
+  Time: {
+    deltaTime
+  }
+})).enact({
+  when: ({$entity: { attack }}) => attack.curCooldown > 0,
+  then: ({$entity: {attack}, Time: {deltaTime}}) => {
+    attack.curCooldown -= deltaTime
+  }
+})
+
+rule("Attack nearby opponent entities", ({x, y, attack, commander}) => ({
+  $entity: {
+    x, y, attack,
+    commander
+  },
+  $other: {
+    x, y, commander,
+    damages: {then: false},
+
+  }
+})).enact({
+  when: ({$entity, $other}) => $entity.commander !== $other.commander,
+  then: ({$entity: {id, attack, x, y}, $other}) => {
+
+    const ePos = new Phaser.Math.Vector2(x!, y!)
+    const oPos = new Phaser.Math.Vector2($other.x!, $other.y!)
+    const dist = oPos.distance(ePos)
+
+    if (dist <= attack!.range) {
+      attack.curCooldown = attack.maxCooldown
+      const damage = randomInt(attack.damage)
+      $other.damages.push(damage)
+      insert({
+        [$other.id]: {
+          damages: $other.damages
+        }
+      })
+    }
+  }
+})
+
+rule("Minions that reach their final destination earn the commander points", ({x, y, commander, finalDestination}) => ({
+  $entity: {
+    x,
+    y,
+    commander,
+    finalDestination
+  }
+})).enact({
+  then: ({$entity: {id, x, y, commander, finalDestination}}) => {
+
+    const p = new Phaser.Math.Vector2(x, y)
+    const d = new Phaser.Math.Vector2(finalDestination.x, finalDestination.y)
+    const dist = p.distance(d)
+    if (dist < 10) {
+      commander.towerPoints += 1
+      insert({
+        [id]: {
+          deathState: DeathState.NEW_DYING
+        }
+      })
+    }
   }
 })
 
