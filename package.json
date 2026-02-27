@@ -20,7 +20,7 @@
     "phaser": "^3.21.0",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
-    "react-scripts": "3.4.0",
+    "react-scripts": "5.0.1",
     "reactified-phaser": "0.1.7-alpha1",
     "typescript": "~3.7.2"
   },
